@@ -114,7 +114,7 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
 
     all_data = add_noise(all_data, experiment, occlusion, bars_type)
 
-    # all_data = all_data.reshape((60000, img_columns, img_rows, 1))
+    all_data = all_data.reshape((60000, img_columns, img_rows, 3))
     all_data = all_data.astype('float32') / 255
 
     if one_hot:
@@ -424,6 +424,7 @@ def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
         decoder = Model(inputs=input_mem, outputs=decoded)
         decoder.summary()
 
+        # for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[14:]):
         for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[11:]):
             dlayer.set_weights(alayer.get_weights())
 
