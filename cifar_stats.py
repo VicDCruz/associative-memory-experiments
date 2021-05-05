@@ -21,9 +21,9 @@ import constants
 img_rows = 28
 img_columns = 28
 
-# Load MNIST data, as part of TensorFlow.
-mnist = tf.keras.datasets.mnist
-(train_images, train_labels), (test_images, test_labels) = mnist.load_data()
+# Load CIFAR data, as part of TensorFlow.
+cifar = tf.keras.datasets.cifar10
+(train_images, train_labels), (test_images, test_labels) = cifar.load_data()
 
 data = np.concatenate((train_images, test_images), axis=0)
 labels = np.concatenate((train_labels, test_labels), axis= 0)

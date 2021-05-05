@@ -100,9 +100,9 @@ def add_noise(data, experiment, occlusion = 0, bars_type = None):
 
 def get_data(experiment, occlusion = None, bars_type = None, one_hot = False):
 
-   # Load MNIST data, as part of TensorFlow.
-    mnist = tf.keras.datasets.mnist
-    (train_images, train_labels), (test_images, test_labels) = mnist.load_data()
+   # Load CIFAR10 data, as part of TensorFlow.
+    cifar = tf.keras.datasets.cifar10
+    (train_images, train_labels), (test_images, test_labels) = cifar.load_data()
 
     all_data = np.concatenate((train_images, test_images), axis=0)
     all_labels = np.concatenate((train_labels, test_labels), axis= 0)

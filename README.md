@@ -20,7 +20,7 @@ The following libraries need to be installed beforehand:
 The experiments were run using the Anaconda 3 distribution.
 
 ### Data
-The MNIST database of handwritten digits, available throught TensorFlow 2.3, was used for all the experiments.
+The CIFAR10 database of handwritten digits, available throught TensorFlow 2.3, was used for all the experiments.
 
 ### Use
 
