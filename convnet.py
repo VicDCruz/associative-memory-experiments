@@ -18,15 +18,15 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Flatten, Dense, \
-    LayerNormalization, Reshape, Conv2DTranspose
+    LayerNormalization, Reshape, Conv2DTranspose, BatchNormalization
 from tensorflow.keras.utils import to_categorical
 from joblib import Parallel, delayed
 import png
 
 import constants
 
-img_rows = 28
-img_columns = 28
+img_rows = 32
+img_columns = 32
 
 TOP_SIDE = 0
 BOTTOM_SIDE = 1
@@ -35,8 +35,10 @@ RIGHT_SIDE = 3
 VERTICAL_BARS = 4
 HORIZONTAL_BARS = 5
 
+
 def print_error(*s):
-    print('Error:', *s, file = sys.stderr)
+    print('Error:', *s, file=sys.stderr)
+
 
 def add_side_occlusion(data, side_hidden, occlusion):
     noise_value = 0
@@ -48,7 +50,7 @@ def add_side_occlusion(data, side_hidden, occlusion):
     if side_hidden == TOP_SIDE:
         origin = (0, 0)
         end = (mid_row, img_columns)
-    elif side_hidden ==  BOTTOM_SIDE:
+    elif side_hidden == BOTTOM_SIDE:
         origin = (mid_row, 0)
         end = (img_rows, img_columns)
     elif side_hidden == LEFT_SIDE:
@@ -64,7 +66,7 @@ def add_side_occlusion(data, side_hidden, occlusion):
 
         for i in range(n, end_n):
             for j in range(m, end_m):
-                image[i,j] = noise_value
+                image[i, j] = noise_value
 
     return data
 
@@ -75,43 +77,45 @@ def add_bars_occlusion(data, bars, n):
     if bars == VERTICAL_BARS:
         for image in data:
             for j in range(img_columns):
-                image[:,j] *= pattern[j]     
+                image[:, j] *= pattern[j]
     else:
         for image in data:
             for i in range(img_rows):
-                image[i,:] *= pattern[i]
+                image[i, :] *= pattern[i]
 
     return data
 
 
-def add_noise(data, experiment, occlusion = 0, bars_type = None):
+def add_noise(data, experiment, occlusion=0, bars_type=None):
     # data is assumed to be a numpy array of shape (N, img_rows, img_columns)
 
     if experiment < constants.EXP_5:
         return data
     elif experiment < constants.EXP_9:
         sides = {constants.EXP_5: TOP_SIDE,  constants.EXP_6: BOTTOM_SIDE,
-                 constants.EXP_7: LEFT_SIDE, constants.EXP_8: RIGHT_SIDE }
+                 constants.EXP_7: LEFT_SIDE, constants.EXP_8: RIGHT_SIDE}
         return add_side_occlusion(data, sides[experiment], occlusion)
     else:
-        bars = {constants.EXP_9: VERTICAL_BARS,  constants.EXP_10: HORIZONTAL_BARS}
+        bars = {constants.EXP_9: VERTICAL_BARS,
+                constants.EXP_10: HORIZONTAL_BARS}
         return add_bars_occlusion(data, bars[experiment], bars_type)
 
 
-def get_data(experiment, occlusion = None, bars_type = None, one_hot = False):
+def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
 
    # Load CIFAR10 data, as part of TensorFlow.
     cifar = tf.keras.datasets.cifar10
     (train_images, train_labels), (test_images, test_labels) = cifar.load_data()
+    train_labels = train_labels.reshape(-1, )
+    test_labels = test_labels.reshape(-1, )
 
     all_data = np.concatenate((train_images, test_images), axis=0)
-    all_labels = np.concatenate((train_labels, test_labels), axis= 0)
+    all_labels = np.concatenate((train_labels, test_labels), axis=0)
 
     all_data = add_noise(all_data, experiment, occlusion, bars_type)
 
-    all_data = all_data.reshape((70000, img_columns, img_rows, 1))
+    # all_data = all_data.reshape((60000, img_columns, img_rows, 1))
     all_data = all_data.astype('float32') / 255
-
 
     if one_hot:
         # Changes labels to binary rows. Each label correspond to a column, and only
@@ -124,16 +128,40 @@ def get_data(experiment, occlusion = None, bars_type = None, one_hot = False):
 def get_encoder(input_img):
 
     # Convolutional Encoder
-    conv_1 = Conv2D(32,kernel_size=3, activation='relu', padding='same',
-        input_shape=(img_columns, img_rows, 1))(input_img)
-    pool_1 = MaxPooling2D((2, 2))(conv_1)
-    conv_2 = Conv2D(32,kernel_size=3, activation='relu')(pool_1)
-    pool_2 = MaxPooling2D((2, 2))(conv_2)
-    drop_1 = Dropout(0.4)(pool_2)
-    conv_3 = Conv2D(64, kernel_size=5, activation='relu')(drop_1)
-    pool_3 = MaxPooling2D((2, 2))(conv_3)
-    drop_2 = Dropout(0.4)(pool_3)
-    norm = LayerNormalization()(drop_2)
+    conv_1 = Conv2D(32, kernel_size=3, activation='relu', padding='same',
+                    input_shape=(img_columns, img_rows, 3))(input_img)
+    # pool_1 = MaxPooling2D((2, 2))(conv_1)
+    # conv_2 = Conv2D(32, kernel_size=3, activation='relu')(pool_1)
+    # pool_2 = MaxPooling2D((2, 2))(conv_2)
+    # drop_1 = Dropout(0.4)(pool_2)
+    # conv_3 = Conv2D(64, kernel_size=5, activation='relu')(drop_1)
+    # pool_3 = MaxPooling2D((2, 2))(conv_3)
+    # drop_2 = Dropout(0.4)(pool_3)
+
+    # CNN
+    layers = [
+        BatchNormalization(),
+        Conv2D(32, (3, 3), activation='relu', padding='same'),
+        BatchNormalization(),
+        MaxPooling2D((2, 2)),
+        Dropout(0.20),
+        Conv2D(64, (3, 3), activation='relu', padding='same'),
+        BatchNormalization(),
+        Conv2D(64, (3, 3), activation='relu', padding='same'),
+        BatchNormalization(),
+        MaxPooling2D((2, 2)),
+        Dropout(0.30),
+        Conv2D(128, (3, 3), activation='relu', padding='same'),
+        BatchNormalization(),
+        Conv2D(128, (3, 3), activation='relu', padding='same'),
+        BatchNormalization(),
+        MaxPooling2D((2, 2)),
+        Dropout(0.40)
+    ]
+    cnn = conv_1
+    for layer in layers:
+        cnn = layer(cnn)
+    norm = LayerNormalization()(cnn)
 
     # Produces an array of size equal to constants.domain.
     code = Flatten()(norm)
@@ -142,16 +170,16 @@ def get_encoder(input_img):
 
 
 def get_decoder(encoded):
-    dense = Dense(units=7*7*32, activation='relu', input_shape=(64, ))(encoded)
-    reshape = Reshape((7, 7, 32))(dense)
+    dense = Dense(units=8 * 8 * 32, activation='relu', input_shape=(64, ))(encoded)
+    reshape = Reshape((8, 8, 32))(dense)
     trans_1 = Conv2DTranspose(64, kernel_size=3, strides=2,
-        padding='same', activation='relu')(reshape)
-    drop_1 = Dropout(0.4)(trans_1)
+                              padding='same', activation='relu')(reshape)
+    drop_1 = Dropout(0.5)(trans_1)
     trans_2 = Conv2DTranspose(32, kernel_size=3, strides=2,
-        padding='same', activation='relu')(drop_1)
-    drop_2 = Dropout(0.4)(trans_2)
-    output_img = Conv2D(1, kernel_size=3, strides=1,
-        activation='sigmoid', padding='same', name='autoencoder')(drop_2)
+                              padding='same', activation='relu')(drop_1)
+    drop_2 = Dropout(0.5)(trans_2)
+    output_img = Conv2D(3, kernel_size=3, strides=1,
+                        activation='sigmoid', padding='same', name='autoencoder')(drop_2)
 
     # Produces an image of same size and channels as originals.
     return output_img
@@ -160,7 +188,8 @@ def get_decoder(encoded):
 def get_classifier(encoded):
     dense_1 = Dense(constants.domain*2, activation='relu')(encoded)
     drop = Dropout(0.4)(dense_1)
-    classification = Dense(10, activation='softmax', name='classification')(drop)
+    classification = Dense(10, activation='softmax',
+                           name='classification')(drop)
 
     return classification
 
@@ -188,32 +217,34 @@ def train_networks(training_percentage, filename, experiment):
             testing_labels = labels[i:j]
 
             training_data = np.concatenate((data[0:i], data[j:total]), axis=0)
-            training_labels = np.concatenate((labels[0:i], labels[j:total]), axis=0)
+            training_labels = np.concatenate(
+                (labels[0:i], labels[j:total]), axis=0)
         else:
             testing_data = np.concatenate((data[i:total], data[0:j]), axis=0)
-            testing_labels = np.concatenate((labels[i:total], labels[0:j]), axis=0)
+            testing_labels = np.concatenate(
+                (labels[i:total], labels[0:j]), axis=0)
             training_data = data[j:i]
             training_labels = labels[j:i]
 
-        input_img = Input(shape=(img_columns, img_rows, 1))
+        input_img = Input(shape=(img_columns, img_rows, 3))
         encoded = get_encoder(input_img)
         classified = get_classifier(encoded)
         decoded = get_decoder(encoded)
         model = Model(inputs=input_img, outputs=[classified, decoded])
 
         model.compile(loss=['categorical_crossentropy', 'binary_crossentropy'],
-                    optimizer='adam',
-                    metrics='accuracy')
+                      optimizer='adam',
+                      metrics='accuracy')
 
         model.summary()
 
         history = model.fit(training_data,
-                (training_labels, training_data),
-                batch_size=100,
-                epochs=EPOCHS,
-                validation_data= (testing_data,
-                    {'classification': testing_labels, 'autoencoder': testing_data}),
-                verbose=2)
+                            (training_labels, training_data),
+                            batch_size=100,
+                            epochs=EPOCHS,
+                            validation_data=(testing_data,
+                                             {'classification': testing_labels, 'autoencoder': testing_data}),
+                            verbose=2)
 
         histories.append(history)
         model.save(constants.model_filename(filename, n))
@@ -223,34 +254,37 @@ def train_networks(training_percentage, filename, experiment):
 
 
 def store_images(original, produced, directory, stage, idx, label):
-    original_filename = constants.original_image_filename(directory, stage, idx, label)
-    produced_filename = constants.produced_image_filename(directory, stage, idx, label)
+    original_filename = constants.original_image_filename(
+        directory, stage, idx, label)
+    produced_filename = constants.produced_image_filename(
+        directory, stage, idx, label)
 
-    pixels = original.reshape(28,28) * 255
+    pixels = original.reshape(28, 28) * 255
     pixels = pixels.round().astype(np.uint8)
     png.from_array(pixels, 'L;8').save(original_filename)
-    pixels = produced.reshape(28,28) * 255
+    pixels = produced.reshape(28, 28) * 255
     pixels = pixels.round().astype(np.uint8)
     png.from_array(pixels, 'L;8').save(produced_filename)
 
 
 def store_memories(labels, produced, features, directory, stage, msize):
     (idx, label) = labels
-    produced_filename = constants.produced_memory_filename(directory, msize, stage, idx, label)
+    produced_filename = constants.produced_memory_filename(
+        directory, msize, stage, idx, label)
 
     if np.isnan(np.sum(features)):
-        pixels = np.full((28,28), 255)
+        pixels = np.full((28, 28), 255)
     else:
-        pixels = produced.reshape(28,28) * 255
+        pixels = produced.reshape(28, 28) * 255
     pixels = pixels.round().astype(np.uint8)
     png.from_array(pixels, 'L;8').save(produced_filename)
 
 
 def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
-            training_percentage, am_filling_percentage, experiment,
-            occlusion = None, bars_type = None):
+                    training_percentage, am_filling_percentage, experiment,
+                    occlusion=None, bars_type=None):
     """ Generate features for images.
-    
+
     Uses the previously trained neural networks for generating the features corresponding
     to the images. It may introduce occlusions.
     """
@@ -274,27 +308,32 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
             testing_data = data[i:j]
             testing_labels = labels[i:j]
             other_data = np.concatenate((data[0:i], data[j:total]), axis=0)
-            other_labels = np.concatenate((labels[0:i], labels[j:total]), axis=0)
+            other_labels = np.concatenate(
+                (labels[0:i], labels[j:total]), axis=0)
             training_data = other_data[:trdata]
             training_labels = other_labels[:trdata]
             filling_data = other_data[trdata:]
             filling_labels = other_labels[trdata:]
         else:
             testing_data = np.concatenate((data[0:j], data[i:total]), axis=0)
-            testing_labels = np.concatenate((labels[0:j], labels[i:total]), axis=0)
+            testing_labels = np.concatenate(
+                (labels[0:j], labels[i:total]), axis=0)
             training_data = data[j:j+trdata]
             training_labels = labels[j:j+trdata]
             filling_data = data[j+trdata:i]
             filling_labels = labels[j+trdata:i]
 
         # Recreate the exact same model, including its weights and the optimizer
-        model = tf.keras.models.load_model(constants.model_filename(model_prefix, n))
+        model = tf.keras.models.load_model(
+            constants.model_filename(model_prefix, n))
 
         # Drop the autoencoder and the last layers of the full connected neural network part.
         classifier = Model(model.input, model.output[0])
         no_hot = to_categorical(testing_labels)
-        classifier.compile(optimizer='adam', loss='categorical_crossentropy', metrics='accuracy')
-        history = classifier.evaluate(testing_data, no_hot, batch_size=100, verbose=1, return_dict=True)
+        classifier.compile(
+            optimizer='adam', loss='categorical_crossentropy', metrics='accuracy')
+        history = classifier.evaluate(
+            testing_data, no_hot, batch_size=100, verbose=1, return_dict=True)
         print(history)
         histories.append(history)
         model = Model(classifier.input, classifier.layers[-4].output)
@@ -310,9 +349,10 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
 
         dict = {
             constants.training_suffix: (training_data, training_features, training_labels),
-            constants.filling_suffix : (filling_data, filling_features, filling_labels),
-            constants.testing_suffix : (testing_data, testing_features, testing_labels)
-            }
+            constants.filling_suffix: (filling_data, filling_features, filling_labels),
+            constants.testing_suffix: (
+                testing_data, testing_features, testing_labels)
+        }
 
         for suffix in dict:
             data_fn = constants.data_filename(data_prefix+suffix, n)
@@ -325,13 +365,13 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
             np.save(labels_fn, l)
 
         n += 1
-    
+
     return histories
 
 
-def remember(experiment, occlusion = None, bars_type = None, tolerance = 0):
+def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
     """ Creates images from features.
-    
+
     Uses the decoder part of the neural networks to (re)create images from features.
 
     Parameters
@@ -351,12 +391,17 @@ def remember(experiment, occlusion = None, bars_type = None, tolerance = 0):
 
     for i in range(constants.training_stages):
         testing_data_filename = constants.data_name + constants.testing_suffix
-        testing_data_filename = constants.data_filename(testing_data_filename, i)
-        testing_features_filename = constants.features_name(experiment, occlusion, bars_type) + constants.testing_suffix
-        testing_features_filename = constants.data_filename(testing_features_filename, i)
+        testing_data_filename = constants.data_filename(
+            testing_data_filename, i)
+        testing_features_filename = constants.features_name(
+            experiment, occlusion, bars_type) + constants.testing_suffix
+        testing_features_filename = constants.data_filename(
+            testing_features_filename, i)
         testing_labels_filename = constants.labels_name + constants.testing_suffix
-        testing_labels_filename = constants.data_filename(testing_labels_filename, i)
-        memories_filename = constants.memories_name(experiment, occlusion, bars_type, tolerance)
+        testing_labels_filename = constants.data_filename(
+            testing_labels_filename, i)
+        memories_filename = constants.memories_name(
+            experiment, occlusion, bars_type, tolerance)
         memories_filename = constants.data_filename(memories_filename, i)
         labels_filename = constants.labels_name + constants.memory_suffix
         labels_filename = constants.data_filename(labels_filename, i)
@@ -385,10 +430,11 @@ def remember(experiment, occlusion = None, bars_type = None, tolerance = 0):
         produced_images = decoder.predict(testing_features)
         n = len(testing_labels)
 
-        Parallel(n_jobs=constants.n_jobs, verbose=5)( \
-            delayed(store_images)(original, produced, constants.testing_directory(experiment, occlusion, bars_type), i, j, label) \
-                for (j, original, produced, label) in \
-                    zip(range(n), testing_data, produced_images, testing_labels))
+        Parallel(n_jobs=constants.n_jobs, verbose=5)(
+            delayed(store_images)(original, produced, constants.testing_directory(
+                experiment, occlusion, bars_type), i, j, label)
+            for (j, original, produced, label) in
+            zip(range(n), testing_data, produced_images, testing_labels))
 
         total = len(memories)
         steps = len(constants.memory_fills)
@@ -402,6 +448,7 @@ def remember(experiment, occlusion = None, bars_type = None, tolerance = 0):
             mem_labels = labels[start:end]
             produced_images = decoder.predict(mem_data)
 
-            Parallel(n_jobs=constants.n_jobs, verbose=5)( \
-                delayed(store_memories)(label, produced, features, constants.memories_directory(experiment, occlusion, bars_type, tolerance), i, j) \
-                    for (produced, features, label) in zip(produced_images, mem_data, mem_labels))
+            Parallel(n_jobs=constants.n_jobs, verbose=5)(
+                delayed(store_memories)(label, produced, features, constants.memories_directory(
+                    experiment, occlusion, bars_type, tolerance), i, j)
+                for (produced, features, label) in zip(produced_images, mem_data, mem_labels))

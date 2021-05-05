@@ -32,13 +32,13 @@ def tolerance_suffix(tolerance):
     return '' if not tolerance else '-tol_' + str(tolerance).zfill(3)
 
 
-def filename(s, idx = None, occlusion = None, bars_type = None, tolerance = 0, extension = ''):
+def filename(s, idx=None, occlusion=None, bars_type=None, tolerance=0, extension=''):
     """ Returns a file name in run_path directory with a given extension and an index
     """
     # Create target directory & all intermediate directories if don't exists
     try:
         os.makedirs(run_path)
-        print("Directory " , run_path ,  " created ")
+        print("Directory ", run_path,  " created ")
     except FileExistsError:
         pass
 
@@ -47,47 +47,48 @@ def filename(s, idx = None, occlusion = None, bars_type = None, tolerance = 0, e
     else:
         return run_path + '/' + s + '-' + str(idx).zfill(3) \
             + occlusion_suffix(occlusion) \
-            + bars_type_suffix(bars_type) + tolerance_suffix(tolerance) + extension
-
+            + bars_type_suffix(bars_type) + \
+            tolerance_suffix(tolerance) + extension
 
 
 def json_filename(s):
     """ Returns a file name for a JSON file in run_path directory
     """
-    return filename(s,  extension = '.json')
+    return filename(s,  extension='.json')
 
 
-def csv_filename(s, idx = None, occlusion = None, bars_type = None, tolerance = 0):
+def csv_filename(s, idx=None, occlusion=None, bars_type=None, tolerance=0):
     """ Returns a file name for csv(i) in run_path directory
     """
     return filename(s, idx, occlusion, bars_type, tolerance, '.csv')
 
 
-def data_filename(s, idx = None):
+def data_filename(s, idx=None):
     """ Returns a file name for csv(i) in run_path directory
     """
     return filename(s, idx, extension='.npy')
 
 
-def picture_filename(s, idx = None, occlusion = None, bars_type = None, tolerance = 0):
+def picture_filename(s, idx=None, occlusion=None, bars_type=None, tolerance=0):
     """ Returns a file name for a graph.
     """
     return filename(s, idx, occlusion, bars_type, tolerance, '.svg')
 
 
-def model_filename(s, idx = None):
+def model_filename(s, idx=None):
     return filename(s, idx)
 
 
-def image_filename(dir, stage, idx, label, suffix = ''):
-    image_path = run_path + '/images/' + dir + '/' + 'stage_' + str(stage) + '/'
+def image_filename(dir, stage, idx, label, suffix=''):
+    image_path = run_path + '/images/' + \
+        dir + '/' + 'stage_' + str(stage) + '/'
 
     try:
         os.makedirs(image_path)
     except FileExistsError:
         pass
 
-    image_path += str(label) + '_' + str(idx).zfill(5)  + suffix + '.png'
+    image_path += str(label) + '_' + str(idx).zfill(5) + suffix + '.png'
     return image_path
 
 
@@ -95,12 +96,12 @@ testing_path = 'test'
 memories_path = 'memories'
 
 
-def testing_directory(i, occlusion = None, bars_type = None):
+def testing_directory(i, occlusion=None, bars_type=None):
     return testing_path + '-' + str(i).zfill(3) \
         + occlusion_suffix(occlusion) + bars_type_suffix(bars_type)
 
 
-def memories_directory(i, occlusion = None, bars_type = None, tolerance = 0):
+def memories_directory(i, occlusion=None, bars_type=None, tolerance=0):
     return memories_path + '-' + str(i).zfill(3) \
         + occlusion_suffix(occlusion) \
         + bars_type_suffix(bars_type) + tolerance_suffix(tolerance)
@@ -108,12 +109,13 @@ def memories_directory(i, occlusion = None, bars_type = None, tolerance = 0):
 
 def memory_filename(dir, msize, stage, idx, label):
     # Remove '-'
-    image_path = run_path + '/images/' + dir + '/' + 'stage_' + str(stage) + '/'
+    image_path = run_path + '/images/' + \
+        dir + '/' + 'stage_' + str(stage) + '/'
     image_path += 'msize_' + str(msize) + '/'
 
     try:
         os.makedirs(image_path)
-        print("Directory " , image_path ,  " created ")
+        print("Directory ", image_path,  " created ")
     except FileExistsError:
         pass
 
@@ -139,12 +141,12 @@ def produced_memory_filename(dir, msize, stage, idx, label):
 features_prefix = 'features'
 experiment_defaul_suffix = ''
 experiment_suffix = ['', '', '', '', '',
-    '-top_hidden', '-bottom_hidden', '-left_hidden', '-right_hidden',
-    '-ver_bars', '-hor_bars']
+                     '-top_hidden', '-bottom_hidden', '-left_hidden', '-right_hidden',
+                     '-ver_bars', '-hor_bars']
 
 
-def features_name(i = -1, occlusion = None, bars_type = None):
-    if i  < 0:
+def features_name(i=-1, occlusion=None, bars_type=None):
+    if i < 0:
         return features_prefix
     else:
         return features_prefix + experiment_suffix[i] \
@@ -153,12 +155,14 @@ def features_name(i = -1, occlusion = None, bars_type = None):
 
 memories_prefix = 'memories'
 
-def memories_name(i = -1, occlusion = None, bars_type = None, tolerance = 0):
+
+def memories_name(i=-1, occlusion=None, bars_type=None, tolerance=0):
     mem_name = memories_prefix
-    if i  >= 0:
+    if i >= 0:
         mem_name += experiment_suffix[i] + occlusion_suffix(occlusion) \
             + bars_type_suffix(bars_type) + tolerance_suffix(tolerance)
     return mem_name
+
 
 # Categories prefixes.
 model_name = 'model'
@@ -172,7 +176,7 @@ filling_suffix = '-filling'
 testing_suffix = '-testing'
 memory_suffix = '-memories'
 
-training_stages = 10 
+training_stages = 10
 model_epochs = 10
 
 am_testing_percent = (100 / training_stages) / 100
@@ -195,8 +199,10 @@ n_measures = 2
 def mean_idx(m):
     return m
 
+
 def std_idx(m):
     return m+1
+
 
 no_response_idx = 2
 no_correct_response_idx = 3
@@ -229,8 +235,10 @@ EXP_10 = 10
 MIN_EXPERIMENT = 1
 MAX_EXPERIMENT = 10
 
-bar_patterns = [[1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0,1,1,0,0],
-            [1,1,1,0,0,0,0,1,1,1,0,0,0,0,1,1,1,0,0,0,0,1,1,1,0,0,0,0],
-            [1,1,1,1,0,0,0,0,0,0,0,1,1,1,1,1,1,0,0,0,0,0,0,0,1,1,1,1],
-            [1,1,1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0,1,1,1,1,1,1,1,1,1,1]]
+bar_patterns = [[1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0, 1, 1, 0, 0],
+                [1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1,
+                    1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0],
+                [1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1,
+                    1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1],
+                [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]]
 N_BARS = len(bar_patterns)
