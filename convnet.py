@@ -430,8 +430,8 @@ def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
         decoder = Model(inputs=input_mem, outputs=decoded)
         decoder.summary()
 
-        # for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[14:]):
-        for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[11:]):
+        # for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[11:]):
+        for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[14:]):
             dlayer.set_weights(alayer.get_weights())
 
         produced_images = decoder.predict(testing_features)
