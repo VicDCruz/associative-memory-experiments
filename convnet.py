@@ -128,7 +128,7 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
 def get_encoder(input_img):
 
     # Convolutional Encoder
-    conv_1 = Conv2D(32, kernel_size=3, activation='relu', padding='same',
+    conv_1 = Conv2D(2, kernel_size=3, activation='relu', padding='same',
                     input_shape=(img_columns, img_rows, 3))(input_img)
     # pool_1 = MaxPooling2D((2, 2))(conv_1)
     # conv_2 = Conv2D(32, kernel_size=3, activation='relu')(pool_1)
@@ -141,19 +141,19 @@ def get_encoder(input_img):
     # CNN
     layers = [
         BatchNormalization(),
-        Conv2D(32, (3, 3), activation='relu', padding='same'),
+        Conv2D(2, (3, 3), activation='relu', padding='same'),
         BatchNormalization(),
         MaxPooling2D((2, 2)),
         Dropout(0.20),
-        Conv2D(64, (3, 3), activation='relu', padding='same'),
+        Conv2D(4, (3, 3), activation='relu', padding='same'),
         BatchNormalization(),
-        Conv2D(64, (3, 3), activation='relu', padding='same'),
+        Conv2D(4, (3, 3), activation='relu', padding='same'),
         BatchNormalization(),
         MaxPooling2D((2, 2)),
         Dropout(0.30),
-        Conv2D(128, (3, 3), activation='relu', padding='same'),
+        Conv2D(4, (3, 3), activation='relu', padding='same'),
         BatchNormalization(),
-        Conv2D(128, (3, 3), activation='relu', padding='same'),
+        Conv2D(4, (3, 3), activation='relu', padding='same'),
         BatchNormalization(),
         MaxPooling2D((2, 2)),
         Dropout(0.40)
@@ -289,6 +289,8 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
     to the images. It may introduce occlusions.
     """
     (data, labels) = get_data(experiment, occlusion, bars_type)
+    # data - imagenes - (60000, 32, 32, 3)
+    # labels - txt - (60000,)
 
     total = len(data)
     step = int(total/constants.training_stages)
