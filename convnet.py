@@ -18,7 +18,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Flatten, Dense, \
-    LayerNormalization, Reshape, Conv2DTranspose, BatchNormalization
+    Activation, Reshape, Conv2DTranspose, BatchNormalization
 from tensorflow.keras.utils import to_categorical
 from joblib import Parallel, delayed
 import png
@@ -125,6 +125,18 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
     return (all_data, all_labels)
 
 
+def create_block(input, chs): 
+    """
+    Convolution block of 2 layers
+    """
+    x = input
+    for i in range(2):
+        x = Conv2D(chs, 3, padding="same")(x)
+        x = Activation("relu")(x)
+        x = BatchNormalization()(x)
+    return x
+
+
 def get_encoder(input_img):
 
     # Convolutional Encoder
@@ -138,37 +150,19 @@ def get_encoder(input_img):
     # pool_3 = MaxPooling2D((2, 2))(conv_3)
     # drop_2 = Dropout(0.4)(pool_3)
 
-    # CNN
-    layers = [
-        BatchNormalization(),
-        Conv2D(32, (3, 3), activation='relu', padding='same'),
-        BatchNormalization(),
-        MaxPooling2D((2, 2)),
-        Dropout(0.20),
-        Conv2D(64, (3, 3), activation='relu', padding='same'),
-        BatchNormalization(),
-        Conv2D(64, (3, 3), activation='relu', padding='same'),
-        BatchNormalization(),
-        MaxPooling2D((2, 2)),
-        Dropout(0.30),
-        Conv2D(128, (3, 3), activation='relu', padding='same'),
-        BatchNormalization(),
-        Conv2D(128, (3, 3), activation='relu', padding='same'),
-        BatchNormalization(),
-        MaxPooling2D((2, 2)),
-        Dropout(0.40),
-        Conv2D(16, (3, 3), activation='relu', padding='same'),
-        BatchNormalization(),
-        MaxPooling2D((2, 2)),
-        Dropout(0.40)
-    ]
-    cnn = conv_1
-    for layer in layers:
-        cnn = layer(cnn)
-    norm = LayerNormalization()(cnn)
+    x = create_block(conv_1, 32)
+    x = MaxPooling2D(2)(x)
+    x = create_block(x, 64)
+    x = MaxPooling2D(2)(x)
+    x = create_block(x, 128)
+    x = MaxPooling2D(2)(x)
+    x = create_block(x, 64)
+    x = MaxPooling2D(2)(x)
+    x = create_block(x, 64)
+    x = MaxPooling2D(2)(x)
 
     # Produces an array of size equal to constants.domain.
-    code = Flatten()(norm)
+    code = Flatten()(x)
 
     return code
 
@@ -178,10 +172,12 @@ def get_decoder(encoded):
     reshape = Reshape((8, 8, 32))(dense)
     trans_1 = Conv2DTranspose(64, kernel_size=3, strides=2,
                               padding='same', activation='relu')(reshape)
-    drop_1 = Dropout(0.5)(trans_1)
+    trans_1 = create_block(trans_1, 64)
+    drop_1 = Dropout(0.4)(trans_1)
     trans_2 = Conv2DTranspose(32, kernel_size=3, strides=2,
                               padding='same', activation='relu')(drop_1)
-    drop_2 = Dropout(0.5)(trans_2)
+    trans_2 = create_block(trans_2, 32)
+    drop_2 = Dropout(0.4)(trans_2)
     output_img = Conv2D(3, kernel_size=3, strides=1,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
 
@@ -431,7 +427,7 @@ def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
         decoder.summary()
 
         # for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[11:]):
-        for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[16:]):
+        for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[14:]):
             dlayer.set_weights(alayer.get_weights())
 
         produced_images = decoder.predict(testing_features)
