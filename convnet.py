@@ -13,6 +13,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+from PIL import Image
 import sys
 import numpy as np
 import tensorflow as tf
@@ -261,10 +262,14 @@ def store_images(original, produced, directory, stage, idx, label):
 
     pixels = original.reshape(32, 32, 3) * 255
     pixels = pixels.round().astype(np.uint8)
-    png.from_array(pixels, 'L;8').save(original_filename)
+    img = Image.fromarray(pixels, 'RGB')
+    img.save(original_filename)
+    # png.from_array(pixels, 'L;8').save(original_filename)
     pixels = produced.reshape(32, 32, 3) * 255
     pixels = pixels.round().astype(np.uint8)
-    png.from_array(pixels, 'L;8').save(produced_filename)
+    img = Image.fromarray(pixels, 'RGB')
+    img.save(produced_filename)
+    # png.from_array(pixels, 'L;8').save(produced_filename)
 
 
 def store_memories(labels, produced, features, directory, stage, msize):
@@ -277,7 +282,9 @@ def store_memories(labels, produced, features, directory, stage, msize):
     else:
         pixels = produced.reshape(32, 32, 3) * 255
     pixels = pixels.round().astype(np.uint8)
-    png.from_array(pixels, 'L;8').save(produced_filename)
+    img = Image.fromarray(pixels, 'RGB')
+    img.save(produced_filename)
+    # png.from_array(pixels, 'L;8').save(produced_filename)
 
 
 def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
