@@ -115,7 +115,7 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
 
     all_data = add_noise(all_data, experiment, occlusion, bars_type)
 
-    all_data = all_data.reshape((60000, img_columns, img_rows, 3))
+    all_data = all_data.reshape((60000, img_columns, img_rows, constants.colors))
     all_data = all_data.astype('float32') / 255
 
     if one_hot:
@@ -126,7 +126,7 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
     return (all_data, all_labels)
 
 
-def create_block(input, chs): 
+def useBlock(input, chs): 
     """
     Convolution block of 2 layers
     """
@@ -142,7 +142,7 @@ def get_encoder(input_img):
 
     # Convolutional Encoder
     conv_1 = Conv2D(32, kernel_size=3, activation='relu', padding='same',
-                    input_shape=(img_columns, img_rows, 3))(input_img)
+                    input_shape=(img_columns, img_rows, constants.colors))(input_img)
     # pool_1 = MaxPooling2D((2, 2))(conv_1)
     # conv_2 = Conv2D(32, kernel_size=3, activation='relu')(pool_1)
     # pool_2 = MaxPooling2D((2, 2))(conv_2)
@@ -151,15 +151,14 @@ def get_encoder(input_img):
     # pool_3 = MaxPooling2D((2, 2))(conv_3)
     # drop_2 = Dropout(0.4)(pool_3)
 
-    x = create_block(conv_1, 32)
+    x = useBlock(conv_1, 64)
     x = MaxPooling2D(2)(x)
-    x = create_block(x, 64)
+    x = useBlock(x, 128)
     x = MaxPooling2D(2)(x)
-    x = create_block(x, 128)
+    x = useBlock(x, 256)
     x = MaxPooling2D(2)(x)
-    x = create_block(x, 64)
+    x = useBlock(x, constants.domain)
     x = MaxPooling2D(2)(x)
-    x = create_block(x, 64)
     x = MaxPooling2D(2)(x)
 
     # Produces an array of size equal to constants.domain.
@@ -169,15 +168,15 @@ def get_encoder(input_img):
 
 
 def get_decoder(encoded):
-    dense = Dense(units=8 * 8 * 32, activation='relu', input_shape=(64, ))(encoded)
+    dense = Dense(units=8 * 8 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
     reshape = Reshape((8, 8, 32))(dense)
     trans_1 = Conv2DTranspose(64, kernel_size=3, strides=2,
                               padding='same', activation='relu')(reshape)
-    trans_1 = create_block(trans_1, 64)
+    trans_1 = useBlock(trans_1, 64)
     drop_1 = Dropout(0.4)(trans_1)
     trans_2 = Conv2DTranspose(32, kernel_size=3, strides=2,
                               padding='same', activation='relu')(drop_1)
-    trans_2 = create_block(trans_2, 32)
+    trans_2 = useBlock(trans_2, 32)
     drop_2 = Dropout(0.4)(trans_2)
     output_img = Conv2D(3, kernel_size=3, strides=1,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
@@ -260,12 +259,12 @@ def store_images(original, produced, directory, stage, idx, label):
     produced_filename = constants.produced_image_filename(
         directory, stage, idx, label)
 
-    pixels = original.reshape(32, 32, 3) * 255
+    pixels = original.reshape(img_columns, img_rows, constants.colors) * 255
     pixels = pixels.round().astype(np.uint8)
     img = Image.fromarray(pixels, 'RGB')
     img.save(original_filename)
     # png.from_array(pixels, 'L;8').save(original_filename)
-    pixels = produced.reshape(32, 32, 3) * 255
+    pixels = produced.reshape(img_columns, img_rows, constants.colors) * 255
     pixels = pixels.round().astype(np.uint8)
     img = Image.fromarray(pixels, 'RGB')
     img.save(produced_filename)
@@ -278,9 +277,9 @@ def store_memories(labels, produced, features, directory, stage, msize):
         directory, msize, stage, idx, label)
 
     if np.isnan(np.sum(features)):
-        pixels = np.full((32, 32, 3), 255)
+        pixels = np.full((img_columns, img_rows, constants.colors), 255)
     else:
-        pixels = produced.reshape(32, 32, 3) * 255
+        pixels = produced.reshape(img_columns, img_rows, constants.colors) * 255
     pixels = pixels.round().astype(np.uint8)
     img = Image.fromarray(pixels, 'RGB')
     img.save(produced_filename)
