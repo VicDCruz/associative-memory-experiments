@@ -51,3 +51,4 @@ limitations under the License.
 # References
 - [Image Classification on CIFAR-10](https://paperswithcode.com/sota/image-classification-on-cifar-10)
 - [Autoencoder as Feature Extractor - CIFAR10](https://www.kaggle.com/mahtabshaan/autoencoder-as-feature-extractor-cifar10/notebook)
+- [Convolution padding and stride | Deep Learning Tutorial 25 (Tensorflow2.0, Keras & Python)](https://www.youtube.com/watch?v=oDAPkZ53zKk)
