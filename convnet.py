@@ -17,12 +17,13 @@ from PIL import Image
 import sys
 import numpy as np
 import tensorflow as tf
+# import tensorflow_probability as tfp
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Flatten, Dense, \
     Activation, Reshape, Conv2DTranspose, BatchNormalization
 from tensorflow.keras.utils import to_categorical
 from joblib import Parallel, delayed
-import png
+# import png
 
 import constants
 
@@ -115,7 +116,8 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
 
     all_data = add_noise(all_data, experiment, occlusion, bars_type)
 
-    all_data = all_data.reshape((60000, img_columns, img_rows, constants.colors))
+    all_data = all_data.reshape(
+        (60000, img_columns, img_rows, constants.colors))
     all_data = all_data.astype('float32') / 255
 
     if one_hot:
@@ -126,13 +128,25 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
     return (all_data, all_labels)
 
 
-def useBlock(input, chs): 
+def useBlockEncoder(input, filters, repeat=1):
     """
     Convolution block of 2 layers
     """
     x = input
-    for i in range(2):
-        x = Conv2D(chs, 3, padding="same")(x)
+    for _ in range(repeat):
+        x = Conv2D(filters, 4, strides=2, padding="same")(x)
+        x = Activation("relu")(x)
+        x = BatchNormalization()(x)
+    return x
+
+
+def useBlockDecoder(input, filters, repeat=1):
+    """
+    Convolution block of 2 layers
+    """
+    x = input
+    for _ in range(repeat):
+        x = Conv2DTranspose(filters, 4, strides=2, padding='same')(x)
         x = Activation("relu")(x)
         x = BatchNormalization()(x)
     return x
@@ -141,8 +155,8 @@ def useBlock(input, chs):
 def get_encoder(input_img):
 
     # Convolutional Encoder
-    conv_1 = Conv2D(32, kernel_size=3, activation='relu', padding='same',
-                    input_shape=(img_columns, img_rows, constants.colors))(input_img)
+    # conv_1 = Conv2D(32, kernel_size=3, activation='relu', padding='same',
+    #                 input_shape=(img_columns, img_rows, constants.colors))(input_img)
     # pool_1 = MaxPooling2D((2, 2))(conv_1)
     # conv_2 = Conv2D(32, kernel_size=3, activation='relu')(pool_1)
     # pool_2 = MaxPooling2D((2, 2))(conv_2)
@@ -151,15 +165,14 @@ def get_encoder(input_img):
     # pool_3 = MaxPooling2D((2, 2))(conv_3)
     # drop_2 = Dropout(0.4)(pool_3)
 
-    x = useBlock(conv_1, 64)
-    x = MaxPooling2D(2)(x)
-    x = useBlock(x, 128)
-    x = MaxPooling2D(2)(x)
-    x = useBlock(x, 256)
-    x = MaxPooling2D(2)(x)
-    x = useBlock(x, constants.domain)
-    x = MaxPooling2D(2)(x)
-    x = MaxPooling2D(2)(x)
+    x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
+               input_shape=(img_columns, img_rows, constants.colors))(input_img)
+    x = useBlockEncoder(x, 64)
+    # x = MaxPooling2D(2)(x)
+    x = useBlockEncoder(x, 128)
+    # x = MaxPooling2D(2)(x)
+    x = useBlockEncoder(x, constants.domain, repeat=2)
+    # x = MaxPooling2D(2)(x)
 
     # Produces an array of size equal to constants.domain.
     code = Flatten()(x)
@@ -168,17 +181,14 @@ def get_encoder(input_img):
 
 
 def get_decoder(encoded):
-    dense = Dense(units=8 * 8 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
-    reshape = Reshape((8, 8, 32))(dense)
-    trans_1 = Conv2DTranspose(64, kernel_size=3, strides=2,
-                              padding='same', activation='relu')(reshape)
-    trans_1 = useBlock(trans_1, 64)
-    drop_1 = Dropout(0.4)(trans_1)
-    trans_2 = Conv2DTranspose(32, kernel_size=3, strides=2,
-                              padding='same', activation='relu')(drop_1)
-    trans_2 = useBlock(trans_2, 32)
-    drop_2 = Dropout(0.4)(trans_2)
-    output_img = Conv2D(3, kernel_size=3, strides=1,
+    # dense = Dense(units=8 * 8 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
+    dense = Dense(units=4 * 4 * 128, activation='relu', input_shape=(constants.domain, ))(encoded)
+    reshape = Reshape((4, 4, 128))(dense)
+    x = useBlockDecoder(reshape, 256)
+    x = useBlockDecoder(x, 64)
+    x = useBlockDecoder(x, 3)
+    drop_2 = Dropout(0.4)(x)
+    output_img = Conv2D(3, kernel_size=4, strides=2,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
 
     # Produces an image of same size and channels as originals.
@@ -186,7 +196,11 @@ def get_decoder(encoded):
 
 
 def get_classifier(encoded):
-    dense_1 = Dense(constants.domain*2, activation='relu')(encoded)
+    batch_size = 100
+    mean = Dense(constants.domain*2, activation='softplus')(encoded)
+    sigma = Dense(constants.domain*2, activation='relu')(encoded)
+    dense_1 = mean + tf.multiply(tf.sqrt(tf.exp(sigma)),
+                                 tf.random.normal(shape=(batch_size, constants.domain*2)))
     drop = Dropout(0.4)(dense_1)
     classification = Dense(10, activation='softmax',
                            name='classification')(drop)
@@ -279,7 +293,8 @@ def store_memories(labels, produced, features, directory, stage, msize):
     if np.isnan(np.sum(features)):
         pixels = np.full((img_columns, img_rows, constants.colors), 255)
     else:
-        pixels = produced.reshape(img_columns, img_rows, constants.colors) * 255
+        pixels = produced.reshape(
+            img_columns, img_rows, constants.colors) * 255
     pixels = pixels.round().astype(np.uint8)
     img = Image.fromarray(pixels, 'RGB')
     img.save(produced_filename)
@@ -433,7 +448,7 @@ def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
         decoder.summary()
 
         # for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[11:]):
-        for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[33:]):
+        for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[32:]):
             dlayer.set_weights(alayer.get_weights())
 
         produced_images = decoder.predict(testing_features)
