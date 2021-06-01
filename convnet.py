@@ -17,7 +17,6 @@ from PIL import Image
 import sys
 import numpy as np
 import tensorflow as tf
-# import tensorflow_probability as tfp
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Flatten, Dense, \
     Activation, Reshape, Conv2DTranspose, BatchNormalization
@@ -182,11 +181,11 @@ def get_encoder(input_img):
 
 def get_decoder(encoded):
     # dense = Dense(units=8 * 8 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
-    dense = Dense(units=4 * 4 * 128, activation='relu', input_shape=(constants.domain, ))(encoded)
-    reshape = Reshape((4, 4, 128))(dense)
+    dense = Dense(units=4 * 4 * 128, activation='relu')(encoded)
+    reshape = Reshape((4, 4, 128), input_shape=(None, constants.domain * 2))(dense)
     x = useBlockDecoder(reshape, 256)
-    x = useBlockDecoder(x, 64)
-    # x = useBlockDecoder(x, 3)
+    x = useBlockDecoder(x, 128)
+    x = useBlockDecoder(x, 64, repeat=2)
     drop_2 = Dropout(0.4)(x)
     output_img = Conv2D(3, kernel_size=4, strides=2,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
