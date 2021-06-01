@@ -186,7 +186,7 @@ def get_decoder(encoded):
     reshape = Reshape((4, 4, 128))(dense)
     x = useBlockDecoder(reshape, 256)
     x = useBlockDecoder(x, 64)
-    x = useBlockDecoder(x, 3)
+    # x = useBlockDecoder(x, 3)
     drop_2 = Dropout(0.4)(x)
     output_img = Conv2D(3, kernel_size=4, strides=2,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
