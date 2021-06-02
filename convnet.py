@@ -170,8 +170,8 @@ def get_encoder(input_img):
     # x = MaxPooling2D(2)(x)
     x = useBlockEncoder(x, 128)
     # x = MaxPooling2D(2)(x)
-    x = useBlockEncoder(x, constants.domain, repeat=2)
-    # x = MaxPooling2D(2)(x)
+    x = useBlockEncoder(x, constants.domain)
+    x = MaxPooling2D(2)(x)
 
     # Produces an array of size equal to constants.domain.
     code = Flatten()(x)
@@ -182,12 +182,13 @@ def get_encoder(input_img):
 def get_decoder(encoded):
     # dense = Dense(units=8 * 8 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
     dense = Dense(units=4 * 4 * 128, activation='relu')(encoded)
-    reshape = Reshape((4, 4, 128), input_shape=(None, constants.domain * 2))(dense)
+    reshape = Reshape((4, 4, 128), input_shape=(
+        None, constants.domain * 2))(dense)
     x = useBlockDecoder(reshape, 256)
     x = useBlockDecoder(x, 128)
     x = useBlockDecoder(x, 64, repeat=2)
     drop_2 = Dropout(0.4)(x)
-    output_img = Conv2D(3, kernel_size=4, strides=2,
+    output_img = Conv2D(constants.colors, kernel_size=4, strides=2,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
 
     # Produces an image of same size and channels as originals.
