@@ -197,11 +197,11 @@ def get_decoder(encoded):
 
 
 def get_classifier(encoded):
-    batch_size = 100
+    batch_size = img_rows # anteriormente 100
     mean = Dense(constants.domain*2, activation='softplus')(encoded)
     sigma = Dense(constants.domain*2, activation='relu')(encoded)
     dense_1 = mean + tf.multiply(tf.sqrt(tf.exp(sigma)),
-                                 tf.random.normal(shape=(img_rows, constants.domain*2)))
+                                 tf.random.normal(shape=(batch_size, constants.domain*2)))
     drop = Dropout(0.4)(dense_1)
     classification = Dense(10, activation='softmax',
                            name='classification')(drop)
