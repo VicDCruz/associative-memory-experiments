@@ -29,6 +29,8 @@ import constants
 img_rows = 32
 img_columns = 32
 
+batch_size = img_rows # anteriormente 100
+
 TOP_SIDE = 0
 BOTTOM_SIDE = 1
 LEFT_SIDE = 2
@@ -197,7 +199,6 @@ def get_decoder(encoded):
 
 
 def get_classifier(encoded):
-    batch_size = img_rows # anteriormente 100
     mean = Dense(constants.domain*2, activation='softplus')(encoded)
     sigma = Dense(constants.domain*2, activation='relu')(encoded)
     dense_1 = mean + tf.multiply(tf.sqrt(tf.exp(sigma)),
@@ -255,7 +256,7 @@ def train_networks(training_percentage, filename, experiment):
 
         history = model.fit(training_data,
                             (training_labels, training_data),
-                            batch_size=100,
+                            batch_size=batch_size,
                             epochs=EPOCHS,
                             validation_data=(testing_data,
                                              {'classification': testing_labels, 'autoencoder': testing_data}),
