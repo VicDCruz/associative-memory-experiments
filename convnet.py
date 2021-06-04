@@ -201,7 +201,7 @@ def get_classifier(encoded):
     mean = Dense(constants.domain*2, activation='softplus')(encoded)
     sigma = Dense(constants.domain*2, activation='relu')(encoded)
     dense_1 = mean + tf.multiply(tf.sqrt(tf.exp(sigma)),
-                                 tf.random.normal(shape=(batch_size, constants.domain*2)))
+                                 tf.random.normal(shape=(img_rows, constants.domain*2)))
     drop = Dropout(0.4)(dense_1)
     classification = Dense(10, activation='softmax',
                            name='classification')(drop)
@@ -449,7 +449,7 @@ def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
         decoder.summary()
 
         # for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[11:]):
-        for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[32:]):
+        for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[11:]):
             dlayer.set_weights(alayer.get_weights())
 
         produced_images = decoder.predict(testing_features)
