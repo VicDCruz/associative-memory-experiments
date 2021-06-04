@@ -139,15 +139,18 @@ def useBlockEncoder(input, filters, repeat=1):
     return x
 
 
-def useBlockDecoder(input, filters, repeat=1):
+def useBlockDecoder(input, filters, repeat=1, light=False):
     """
     Convolution block of 2 layers
     """
     x = input
     for _ in range(repeat):
         x = Conv2DTranspose(filters, 4, strides=2, padding='same')(x)
-        x = Activation("relu")(x)
-        x = BatchNormalization()(x)
+        if light:
+            x = Dropout(0.4)(x)
+        else:
+            x = Activation("relu")(x)
+            x = BatchNormalization()(x)
     return x
 
 
@@ -166,12 +169,10 @@ def get_encoder(input_img):
 
     x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
                input_shape=(img_columns, img_rows, constants.colors))(input_img)
-    x = useBlockEncoder(x, 64)
-    # x = MaxPooling2D(2)(x)
-    x = useBlockEncoder(x, 128)
-    # x = MaxPooling2D(2)(x)
-    x = useBlockEncoder(x, constants.domain)
     x = MaxPooling2D(2)(x)
+    x = useBlockEncoder(x, 32)
+    x = MaxPooling2D(2)(x)
+    x = useBlockEncoder(x, constants.domain)
 
     # Produces an array of size equal to constants.domain.
     code = Flatten()(x)
@@ -181,12 +182,12 @@ def get_encoder(input_img):
 
 def get_decoder(encoded):
     # dense = Dense(units=8 * 8 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
-    dense = Dense(units=4 * 4 * 128, activation='relu')(encoded)
-    reshape = Reshape((4, 4, 128), input_shape=(
+    dense = Dense(units=4 * 4 * 32, activation='relu')(encoded)
+    reshape = Reshape((4, 4, 32), input_shape=(
         None, constants.domain * 2))(dense)
-    x = useBlockDecoder(reshape, 256)
-    x = useBlockDecoder(x, 128)
-    x = useBlockDecoder(x, 64, repeat=2)
+    x = useBlockDecoder(reshape, 64)
+    x = useBlockDecoder(x, 32, repeat=2, light=True)
+    x = useBlockDecoder(x, 8, light=True)
     drop_2 = Dropout(0.4)(x)
     output_img = Conv2D(constants.colors, kernel_size=4, strides=2,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
