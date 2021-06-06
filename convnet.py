@@ -199,18 +199,18 @@ def get_decoder(encoded):
 
 
 def get_classifier(encoded):
-    mean = Dense(constants.domain*2, activation='softplus')(encoded)
-    sigma = Dense(constants.domain*2, activation='relu')(encoded)
-    sqr = tf.sqrt(tf.exp(sigma))
-    z = mean + tf.multiply(sqr, tf.random.normal(shape=tf.shape(sqr)))
-    drop = Dropout(0.4)(z)
-    classification = Dense(10, activation='softmax',
-                           name='classification')(drop)
-
-    # dense_1 = Dense(constants.domain*2, activation='relu')(encoded)
-    # drop = Dropout(0.4)(dense_1)
+    # mean = Dense(constants.domain*2, activation='softplus')(encoded)
+    # sigma = Dense(constants.domain*2, activation='relu')(encoded)
+    # sqr = tf.sqrt(tf.exp(sigma))
+    # z = mean + tf.multiply(sqr, tf.random.normal(shape=tf.shape(sqr)))
+    # drop = Dropout(0.4)(z)
     # classification = Dense(10, activation='softmax',
     #                        name='classification')(drop)
+
+    dense_1 = Dense(constants.domain*2, activation='relu')(encoded)
+    drop = Dropout(0.4)(dense_1)
+    classification = Dense(10, activation='softmax',
+                           name='classification')(drop)
 
     return classification
 
