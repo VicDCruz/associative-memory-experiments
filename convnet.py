@@ -184,14 +184,14 @@ def get_encoder(input_img):
 
 
 def get_decoder(encoded):
-    dense = Dense(units=4 * 4 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
+    dense = Dense(units=4 * 4 * 64, activation='relu', input_shape=(constants.domain, ))(encoded)
     # dense = Dense(units=4 * 4 * 32, activation='relu')(encoded)
-    reshape = Reshape((4, 4, 32))(dense)
-    x = useBlockDecoder(reshape, 64)
-    x = useBlockDecoder(x, 32, light=True)
+    reshape = Reshape((4, 4, 64))(dense)
+    x = useBlockDecoder(reshape, 128, light=True)
+    x = useBlockDecoder(x, 64, repeat=2, light=True)
     x = useBlockDecoder(x, 8, light=True)
     drop_2 = Dropout(0.4)(x)
-    output_img = Conv2D(constants.colors, kernel_size=3, strides=1,
+    output_img = Conv2D(constants.colors, kernel_size=4, strides=2,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
 
     # Produces an image of same size and channels as originals.
