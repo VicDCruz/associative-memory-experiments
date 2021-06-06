@@ -29,7 +29,7 @@ import constants
 img_rows = 32
 img_columns = 32
 
-batch_size = 100
+BATCH_SIZE = 100
 
 TOP_SIDE = 0
 BOTTOM_SIDE = 1
@@ -171,9 +171,9 @@ def get_encoder(input_img):
 
     x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
                input_shape=(img_columns, img_rows, constants.colors))(input_img)
-    x = MaxPooling2D(2)(x)
+    x = MaxPooling2D((2, 2))(x)
     x = useBlockEncoder(x, 32)
-    x = MaxPooling2D(2)(x)
+    x = MaxPooling2D((2, 2))(x)
     x = useBlockEncoder(x, constants.domain)
 
     # Produces an array of size equal to constants.domain.
@@ -246,7 +246,7 @@ def train_networks(training_percentage, filename, experiment):
             training_data = data[j:i]
             training_labels = labels[j:i]
 
-        input_img = Input(shape=(img_columns, img_rows, 3))
+        input_img = Input(shape=(img_columns, img_rows, constants.colors))
         encoded = get_encoder(input_img)
         classified = get_classifier(encoded)
         decoded = get_decoder(encoded)
@@ -260,7 +260,7 @@ def train_networks(training_percentage, filename, experiment):
 
         history = model.fit(training_data,
                             (training_labels, training_data),
-                            batch_size=batch_size,
+                            batch_size=BATCH_SIZE,
                             epochs=EPOCHS,
                             validation_data=(testing_data,
                                              {'classification': testing_labels, 'autoencoder': testing_data}),
@@ -362,7 +362,7 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
         classifier.compile(
             optimizer='adam', loss='categorical_crossentropy', metrics='accuracy')
         history = classifier.evaluate(
-            testing_data, no_hot, batch_size=batch_size, verbose=1, return_dict=True)
+            testing_data, no_hot, batch_size=BATCH_SIZE, verbose=1, return_dict=True)
         print(history)
         histories.append(history)
         model = Model(classifier.input, classifier.layers[-4].output)
