@@ -256,7 +256,7 @@ def train_networks(training_percentage, filename, experiment):
 
         history = model.fit(training_data,
                             (training_labels, training_data),
-                            batch_size=batch_size,
+                            batch_size=100,
                             epochs=EPOCHS,
                             validation_data=(testing_data,
                                              {'classification': testing_labels, 'autoencoder': testing_data}),
