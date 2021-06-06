@@ -29,7 +29,7 @@ import constants
 img_rows = 32
 img_columns = 32
 
-batch_size = 24
+batch_size = 100
 
 TOP_SIDE = 0
 BOTTOM_SIDE = 1
