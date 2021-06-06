@@ -198,11 +198,11 @@ def get_decoder(encoded):
     return output_img
 
 
-def get_classifier(encoded, i):
+def get_classifier(encoded):
     mean = Dense(constants.domain*2, activation='softplus')(encoded)
     sigma = Dense(constants.domain*2, activation='relu')(encoded)
     dense_1 = mean + tf.multiply(tf.sqrt(tf.exp(sigma)),
-                                 tf.random.normal(shape=(i, constants.domain*2)))
+                                 tf.random.normal(shape=(64, 64, 8)))
     drop = Dropout(0.4)(dense_1)
     classification = Dense(10, activation='softmax',
                            name='classification')(drop)
@@ -244,7 +244,7 @@ def train_networks(training_percentage, filename, experiment):
 
         input_img = Input(shape=(img_columns, img_rows, 3))
         encoded = get_encoder(input_img)
-        classified = get_classifier(encoded, batch_size)
+        classified = get_classifier(encoded)
         decoded = get_decoder(encoded)
         model = Model(inputs=input_img, outputs=[classified, decoded])
 
