@@ -174,6 +174,7 @@ def get_encoder(input_img):
     x = MaxPooling2D((2, 2))(x)
     x = useBlockEncoder(x, 32)
     x = MaxPooling2D((2, 2))(x)
+    x = useBlockEncoder(x, 64)
     x = useBlockEncoder(x, constants.domain)
 
     # Produces an array of size equal to constants.domain.
