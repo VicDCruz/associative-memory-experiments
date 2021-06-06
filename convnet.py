@@ -29,7 +29,7 @@ import constants
 img_rows = 32
 img_columns = 32
 
-batch_size = 100
+batch_size = 32
 
 TOP_SIDE = 0
 BOTTOM_SIDE = 1
@@ -256,7 +256,7 @@ def train_networks(training_percentage, filename, experiment):
 
         history = model.fit(training_data,
                             (training_labels, training_data),
-                            batch_size=100,
+                            batch_size=batch_size,
                             epochs=EPOCHS,
                             validation_data=(testing_data,
                                              {'classification': testing_labels, 'autoencoder': testing_data}),
@@ -358,7 +358,7 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
         classifier.compile(
             optimizer='adam', loss='categorical_crossentropy', metrics='accuracy')
         history = classifier.evaluate(
-            testing_data, no_hot, batch_size=100, verbose=1, return_dict=True)
+            testing_data, no_hot, batch_size=batch_size, verbose=1, return_dict=True)
         print(history)
         histories.append(history)
         model = Model(classifier.input, classifier.layers[-4].output)
