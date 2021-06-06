@@ -183,10 +183,9 @@ def get_encoder(input_img):
 
 
 def get_decoder(encoded):
-    # dense = Dense(units=8 * 8 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
-    dense = Dense(units=4 * 4 * 32, activation='relu')(encoded)
-    reshape = Reshape((4, 4, 32), input_shape=(
-        None, constants.domain * 2))(dense)
+    dense = Dense(units=4 * 4 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
+    # dense = Dense(units=4 * 4 * 32, activation='relu')(encoded)
+    reshape = Reshape((4, 4, 32))(dense)
     x = useBlockDecoder(reshape, 64)
     x = useBlockDecoder(x, 32, repeat=2, light=True)
     x = useBlockDecoder(x, 8, light=True)
@@ -202,8 +201,8 @@ def get_classifier(encoded):
     # mean = Dense(constants.domain*2, activation='softplus')(encoded)
     # sigma = Dense(constants.domain*2, activation='relu')(encoded)
     # sqr = tf.sqrt(tf.exp(sigma))
-    # dense_1 = mean + tf.multiply(sqr, tf.random.normal(shape=tf.shape(sqr)))
-    # drop = Dropout(0.4)(dense_1)
+    # z = mean + tf.multiply(sqr, tf.random.normal(shape=tf.shape(sqr)))
+    # drop = Dropout(0.4)(z)
     # classification = Dense(10, activation='softmax',
     #                        name='classification')(drop)
 
