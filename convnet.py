@@ -19,7 +19,7 @@ import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Flatten, Dense, \
-    Activation, Reshape, Conv2DTranspose, BatchNormalization
+    Activation, Reshape, Conv2DTranspose, BatchNormalization, LayerNormalization
 from tensorflow.keras.utils import to_categorical
 from joblib import Parallel, delayed
 # import png
@@ -129,29 +129,29 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
     return (all_data, all_labels)
 
 
-def useBlockEncoder(input, filters, repeat=1):
+def useBlockEncoder(input, filters, repeat=1, kernelSize=4):
     """
     Convolution block of 2 layers
     """
     x = input
     for _ in range(repeat):
-        x = Conv2D(filters, 4, strides=2, padding="same")(x)
+        x = Conv2D(filters, kernelSize, strides=2, padding="same")(x)
         x = Activation("relu")(x)
         x = BatchNormalization()(x)
     return x
 
 
-def useBlockDecoder(input, filters, repeat=1, light=False):
+def useBlockDecoder(input, filters, repeat=1, light=False, kernelSize=4):
     """
     Convolution block of 2 layers
     """
     x = input
     for _ in range(repeat):
-        x = Conv2DTranspose(filters, 4, strides=2, padding='same')(x)
+        x = Conv2DTranspose(filters, kernelSize, strides=2, padding='same')(x)
+        x = Activation("relu")(x)
         if light:
             x = Dropout(0.4)(x)
         else:
-            x = Activation("relu")(x)
             x = BatchNormalization()(x)
     return x
 
@@ -172,11 +172,14 @@ def get_encoder(input_img):
     x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
                input_shape=(img_columns, img_rows, constants.colors))(input_img)
     x = MaxPooling2D((2, 2))(x)
-    x = useBlockEncoder(x, 16, repeat=2)
-    # x = MaxPooling2D((2, 2))(x)
-    x = useBlockEncoder(x, 32, repeat=2)
-    x = useBlockEncoder(x, 64, repeat=2)
-    x = useBlockEncoder(x, constants.domain)
+    x = useBlockEncoder(x, 32, kernelSize=3)
+    x = MaxPooling2D((2, 2))(x)
+    x = Dropout(0.4)(x)
+    x = useBlockEncoder(x, constants.domain, kernelSize=5)
+    x = MaxPooling2D((2, 2))(x)
+    x = Dropout(0.4)(x)
+
+    x = LayerNormalization()(x)
 
     # Produces an array of size equal to constants.domain.
     code = Flatten()(x)
@@ -185,14 +188,13 @@ def get_encoder(input_img):
 
 
 def get_decoder(encoded):
-    dense = Dense(units=4 * 4 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
+    dense = Dense(units=8 * 8 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
     # dense = Dense(units=4 * 4 * 32, activation='relu')(encoded)
-    reshape = Reshape((4, 4, 32))(dense)
-    x = useBlockDecoder(reshape, 128)
-    x = useBlockDecoder(x, 64, repeat=2)
-    x = useBlockDecoder(x, 8)
+    reshape = Reshape((8, 8, 32))(dense)
+    x = useBlockDecoder(reshape, 64, kernelSize=5)
+    x = useBlockDecoder(x, 32, kernelSize=3)
     drop_2 = Dropout(0.4)(x)
-    output_img = Conv2D(constants.colors, kernel_size=4, strides=2,
+    output_img = Conv2D(constants.colors, kernel_size=3, strides=1,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
 
     # Produces an image of same size and channels as originals.
