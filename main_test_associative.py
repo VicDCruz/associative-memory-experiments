@@ -153,6 +153,7 @@ def plot_features_graph(domain, means, stdevs, experiment, occlusion = None, bar
         plt.clf()
         plt.figure(figsize=(12,5))
 
+        print(len(xrange), len(means[i]))
         plt.errorbar(xrange, means[i], fmt=fmts[i], yerr=stdevs[i], label=str(i))
         plt.xlim(0, 100)
         plt.ylim(ymin, ymax)
