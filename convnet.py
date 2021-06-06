@@ -183,11 +183,11 @@ def get_encoder(input_img):
 
 
 def get_decoder(encoded):
-    dense = Dense(units=2 * 2 * 128, activation='relu', input_shape=(constants.domain, ))(encoded)
+    dense = Dense(units=4 * 4 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
     # dense = Dense(units=4 * 4 * 32, activation='relu')(encoded)
-    reshape = Reshape((2, 2, 128))(dense)
+    reshape = Reshape((4, 4, 32))(dense)
     x = useBlockDecoder(reshape, 64)
-    x = useBlockDecoder(x, 32, repeat=2, light=True)
+    x = useBlockDecoder(x, 32, light=True)
     x = useBlockDecoder(x, 8, light=True)
     drop_2 = Dropout(0.4)(x)
     output_img = Conv2D(constants.colors, kernel_size=3, strides=1,
