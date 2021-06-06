@@ -190,7 +190,7 @@ def get_decoder(encoded):
     x = useBlockDecoder(x, 32, repeat=2, light=True)
     x = useBlockDecoder(x, 8, light=True)
     drop_2 = Dropout(0.4)(x)
-    output_img = Conv2D(constants.colors, kernel_size=4, strides=2,
+    output_img = Conv2D(constants.colors, kernel_size=3, strides=1,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
 
     # Produces an image of same size and channels as originals.
