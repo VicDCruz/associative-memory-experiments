@@ -183,9 +183,9 @@ def get_encoder(input_img):
 
 
 def get_decoder(encoded):
-    dense = Dense(units=4 * 4 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
+    dense = Dense(units=2 * 2 * 128, activation='relu', input_shape=(constants.domain, ))(encoded)
     # dense = Dense(units=4 * 4 * 32, activation='relu')(encoded)
-    reshape = Reshape((4, 4, 32))(dense)
+    reshape = Reshape((2, 2, 128))(dense)
     x = useBlockDecoder(reshape, 64)
     x = useBlockDecoder(x, 32, repeat=2, light=True)
     x = useBlockDecoder(x, 8, light=True)
