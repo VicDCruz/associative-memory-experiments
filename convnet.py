@@ -29,7 +29,7 @@ import constants
 img_rows = 32
 img_columns = 32
 
-batch_size = 32
+batch_size = 100
 
 TOP_SIDE = 0
 BOTTOM_SIDE = 1
@@ -202,7 +202,7 @@ def get_classifier(encoded):
     mean = Dense(constants.domain*2, activation='softplus')(encoded)
     sigma = Dense(constants.domain*2, activation='relu')(encoded)
     dense_1 = mean + tf.multiply(tf.sqrt(tf.exp(sigma)),
-                                 tf.random.normal(shape=(batch_size, constants.domain*2)))
+                                 tf.random.normal(shape=(None, constants.domain*2)))
     drop = Dropout(0.4)(dense_1)
     classification = Dense(10, activation='softmax',
                            name='classification')(drop)
