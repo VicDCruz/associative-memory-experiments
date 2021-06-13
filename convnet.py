@@ -177,7 +177,7 @@ def get_encoder(input_img):
     x = useBlockEncoder(x, 64, kernelSize=3)
     x = useBlockEncoder(x, 128, kernelSize=3)
     x = useBlockEncoder(x, constants.domain, kernelSize=3, strides=1)
-
+    x = MaxPooling2D((2, 2))(x)
     x = LayerNormalization()(x)
 
     # Produces an array of size equal to constants.domain.
@@ -202,7 +202,7 @@ def get_decoder(encoded):
     hid_decoded = decoder_hid(z)
 
     # dense = Dense(units=2 * 2 * 512, activation='relu', input_shape=(constants.domain, ))(encoded)
-    dense = Dense(units=1 * 1 * 512, activation='relu', input_shape=(4 * constants.domain, ))(hid_decoded)
+    dense = Dense(units=1 * 1 * 512, activation='relu', input_shape=(constants.domain, ))(hid_decoded)
     # dense = Dense(units=4 * 4 * 32, activation='relu')(encoded)
     reshape = Reshape((1, 1, 512))(dense)
     x = useBlockDecoder(reshape, 256, kernelSize=3)
