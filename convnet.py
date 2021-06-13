@@ -474,7 +474,7 @@ def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
         decoder.summary()
 
         # for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[11:]):
-        for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[15:]):
+        for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[16:]):
             dlayer.set_weights(alayer.get_weights())
 
         produced_images = decoder.predict(testing_features)
