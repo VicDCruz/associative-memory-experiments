@@ -22,6 +22,7 @@ from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Flatte
     Activation, Reshape, Conv2DTranspose, BatchNormalization, LayerNormalization
 from tensorflow.keras.utils import to_categorical
 from joblib import Parallel, delayed
+from tensorflow.keras import backend as K
 # import png
 
 import constants
@@ -29,7 +30,7 @@ import constants
 img_rows = 32
 img_columns = 32
 
-BATCH_SIZE = 100
+BATCH_SIZE = 128
 
 TOP_SIDE = 0
 BOTTOM_SIDE = 1
@@ -129,30 +130,31 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
     return (all_data, all_labels)
 
 
-def useBlockEncoder(input, filters, repeat=1, kernelSize=4):
+def useBlockEncoder(input, filters, repeat=1, kernelSize=4, strides=2):
     """
     Convolution block of 2 layers
     """
     x = input
     for _ in range(repeat):
-        x = Conv2D(filters, kernelSize, strides=2, padding="same")(x)
-        x = Activation("relu")(x)
+        x = Conv2D(filters, kernelSize, strides=strides, padding="same")(x)
         x = BatchNormalization()(x)
+        x = Activation("relu")(x)
     return x
 
 
-def useBlockDecoder(input, filters, repeat=1, light=False, kernelSize=4):
+def useBlockDecoder(input, filters, repeat=1, kernelSize=4):
     """
     Convolution block of 2 layers
     """
     x = input
     for _ in range(repeat):
         x = Conv2DTranspose(filters, kernelSize, strides=2, padding='same')(x)
+        x = BatchNormalization()(x)
         x = Activation("relu")(x)
-        if light:
-            x = Dropout(0.4)(x)
-        else:
-            x = BatchNormalization()(x)
+        # if light:
+        #     x = Dropout(0.4)(x)
+        # else:
+        #     x = BatchNormalization()(x)
     return x
 
 
@@ -171,13 +173,10 @@ def get_encoder(input_img):
 
     x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
                input_shape=(img_columns, img_rows, constants.colors))(input_img)
-    x = MaxPooling2D((2, 2))(x)
     x = useBlockEncoder(x, 32, kernelSize=3)
-    x = MaxPooling2D((2, 2))(x)
-    x = Dropout(0.4)(x)
-    x = useBlockEncoder(x, constants.domain, kernelSize=5)
-    x = MaxPooling2D((2, 2))(x)
-    x = Dropout(0.4)(x)
+    x = useBlockEncoder(x, 64, kernelSize=3)
+    x = useBlockEncoder(x, 128, kernelSize=3)
+    x = useBlockEncoder(x, constants.domain, kernelSize=3, strides=1)
 
     x = LayerNormalization()(x)
 
@@ -187,14 +186,31 @@ def get_encoder(input_img):
     return code
 
 
+def sampling(args):
+    z_mean, z_log_var = args
+    epsilon = K.random_normal(shape=(K.shape(z_mean)[0], 32),
+                              mean=0., stddev=1.0)
+    return z_mean + K.exp(z_log_var) * epsilon
+
+
 def get_decoder(encoded):
-    dense = Dense(units=8 * 8 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
+    hidden = Dense(32, activation='relu')(encoded)
+    z_mean = Dense(32)(hidden)
+    z_log_var = Dense(32)(hidden)
+    z = tf.keras.layers.Lambda(sampling, output_shape=(32,))([z_mean, z_log_var])
+    decoder_hid = Dense(32, activation='relu')
+    hid_decoded = decoder_hid(z)
+
+    # dense = Dense(units=2 * 2 * 512, activation='relu', input_shape=(constants.domain, ))(encoded)
+    dense = Dense(units=2 * 2 * 512, activation='relu', input_shape=(constants.domain, ))(hid_decoded)
     # dense = Dense(units=4 * 4 * 32, activation='relu')(encoded)
-    reshape = Reshape((8, 8, 32))(dense)
-    x = useBlockDecoder(reshape, 64, kernelSize=5)
-    x = useBlockDecoder(x, 32, kernelSize=3)
-    drop_2 = Dropout(0.4)(x)
-    output_img = Conv2D(constants.colors, kernel_size=3, strides=1,
+    reshape = Reshape((2, 2, 512))(dense)
+    x = useBlockDecoder(reshape, 256, kernelSize=3)
+    x = useBlockDecoder(x, 128, kernelSize=3)
+    x = useBlockDecoder(x, 64, kernelSize=3)
+    drop_2 = useBlockDecoder(x, 32, kernelSize=3)
+    # drop_2 = Dropout(0.4)(x)
+    output_img = Conv2DTranspose(constants.colors, kernel_size=3, strides=1,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
 
     # Produces an image of same size and channels as originals.
@@ -458,7 +474,7 @@ def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
         decoder.summary()
 
         # for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[11:]):
-        for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[11:]):
+        for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[15:]):
             dlayer.set_weights(alayer.get_weights())
 
         produced_images = decoder.predict(testing_features)
