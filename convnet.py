@@ -18,6 +18,7 @@ import sys
 import numpy as np
 import tensorflow as tf
 from tensorflow.keras import Model
+from tensorflow.keras import layers
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Flatten, Dense, \
     Activation, Reshape, Conv2DTranspose, BatchNormalization, LayerNormalization
 from tensorflow.keras.utils import to_categorical
@@ -39,6 +40,8 @@ LEFT_SIDE = 2
 RIGHT_SIDE = 3
 VERTICAL_BARS = 4
 HORIZONTAL_BARS = 5
+
+layersEncoder = []
 
 
 def print_error(*s):
@@ -171,16 +174,16 @@ def get_encoder(input_img):
     # conv_3 = Conv2D(64, kernel_size=5, activation='relu')(drop_1)
     # pool_3 = MaxPooling2D((2, 2))(conv_3)
     # drop_2 = Dropout(0.4)(pool_3)
-    layers = []
+    layersTmp = []
 
     x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
                input_shape=(img_columns, img_rows, constants.colors))(input_img)
     x = useBlockEncoder(x, 32, kernelSize=3)
-    layers.append(x)
+    layersTmp.append(x)
     x = useBlockEncoder(x, 64, kernelSize=3)
-    layers.append(x)
+    layersTmp.append(x)
     x = useBlockEncoder(x, 128, kernelSize=3)
-    layers.append(x)
+    layersTmp.append(x)
     x = MaxPooling2D((2, 2))(x)
     x = useBlockEncoder(x, constants.domain, kernelSize=3, strides=1)
     x = MaxPooling2D((2, 2))(x)
@@ -189,7 +192,10 @@ def get_encoder(input_img):
     # Produces an array of size equal to constants.domain.
     code = Flatten()(x)
 
-    return code, layers
+    global layersEncoder
+    layersEncoder = layersTmp
+
+    return code
 
 
 def sampling(args):
@@ -279,9 +285,9 @@ def train_networks(training_percentage, filename, experiment):
             training_labels = labels[j:i]
 
         input_img = Input(shape=(img_columns, img_rows, constants.colors))
-        encoded, layers = get_encoder(input_img)
+        encoded = get_encoder(input_img)
         classified = get_classifier(encoded)
-        decoded = get_decoder(encoded, layers)
+        decoded = get_decoder(encoded, layersEncoder)
         model = Model(inputs=input_img, outputs=[classified, decoded])
 
         model.compile(loss=['categorical_crossentropy', 'binary_crossentropy'],
@@ -290,13 +296,15 @@ def train_networks(training_percentage, filename, experiment):
 
         model.summary()
 
+        checkpoint = tf.keras.callbacks.ModelCheckpoint('best_model.h5', verbose=1, save_best_only=True, save_weights_only=True)
         history = model.fit(training_data,
                             (training_labels, training_data),
                             batch_size=BATCH_SIZE,
                             epochs=EPOCHS,
                             validation_data=(testing_data,
                                              {'classification': testing_labels, 'autoencoder': testing_data}),
-                            verbose=2)
+                            verbose=2,
+                            callbacks=[checkpoint])
 
         histories.append(history)
         model.save(constants.model_filename(filename, n))
@@ -481,7 +489,7 @@ def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
 
         # Drop the encoder
         input_mem = Input(shape=(constants.domain, ))
-        decoded = get_decoder(input_mem)
+        decoded = get_decoder(input_mem, layersEncoder)
         decoder = Model(inputs=input_mem, outputs=decoded)
         decoder.summary()
 
