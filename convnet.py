@@ -173,7 +173,8 @@ def get_encoder(input_img):
 
     x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
                input_shape=(img_columns, img_rows, constants.colors))(input_img)
-    x = useBlockEncoder(x, 32, repeat=2, kernelSize=3)
+    x = useBlockEncoder(x, 32, kernelSize=3)
+    x = MaxPooling2D((2, 2))(x)
     x = useBlockEncoder(x, 64, kernelSize=3)
     x = useBlockEncoder(x, 128, kernelSize=3)
     x = useBlockEncoder(x, constants.domain, kernelSize=3, strides=1)
@@ -202,15 +203,18 @@ def get_decoder(encoded):
     hid_decoded = decoder_hid(z)
 
     # dense = Dense(units=2 * 2 * 512, activation='relu', input_shape=(constants.domain, ))(encoded)
-    dense = Dense(units=1 * 1 * 512, activation='relu', input_shape=(constants.domain, ))(hid_decoded)
+    dense = Dense(units=4 * 4 * 128, activation='relu', input_shape=(constants.domain, ))(hid_decoded)
     # dense = Dense(units=4 * 4 * 32, activation='relu')(encoded)
-    reshape = Reshape((1, 1, 512))(dense)
-    x = useBlockDecoder(reshape, 256, kernelSize=3)
-    x = useBlockDecoder(x, 128, kernelSize=3)
+    reshape = Reshape((4, 4, 128))(dense)
+    # x = useBlockDecoder(reshape, 256, kernelSize=5)
+    # x = Dropout(0.4)(x)
+    x = useBlockDecoder(reshape, 128, kernelSize=5)
+    x = Dropout(0.4)(x)
     x = useBlockDecoder(x, 64, kernelSize=3)
-    drop_2 = useBlockDecoder(x, 32, repeat=2, kernelSize=3)
-    # drop_2 = Dropout(0.4)(x)
-    output_img = Conv2DTranspose(constants.colors, kernel_size=3, strides=1,
+    x = Dropout(0.4)(x)
+    x = useBlockDecoder(x, 32, kernelSize=3)
+    drop_2 = Dropout(0.4)(x)
+    output_img = Conv2D(constants.colors, kernel_size=3, strides=1,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
 
     # Produces an image of same size and channels as originals.
@@ -474,7 +478,7 @@ def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
         decoder.summary()
 
         # for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[11:]):
-        for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[20:]):
+        for dlayer, alayer in zip(decoder.layers[1:], autoencoder.layers[18:]):
             dlayer.set_weights(alayer.get_weights())
 
         produced_images = decoder.predict(testing_features)
