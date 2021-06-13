@@ -25,9 +25,6 @@ from joblib import Parallel, delayed
 from tensorflow.keras import backend as K
 # import png
 
-from tensorflow.python.framework.ops import disable_eager_execution
-disable_eager_execution()
-
 import constants
 
 img_rows = 32
@@ -41,9 +38,6 @@ LEFT_SIDE = 2
 RIGHT_SIDE = 3
 VERTICAL_BARS = 4
 HORIZONTAL_BARS = 5
-
-z_mean = None
-z_log_var = None
 
 
 def print_error(*s):
@@ -202,8 +196,6 @@ def sampling(args):
 
 def get_decoder(encoded):
     hidden = Dense(32, activation='relu')(encoded)
-    global z_mean
-    global z_log_var
     z_mean = Dense(32)(hidden)
     z_log_var = Dense(32)(hidden)
     z = tf.keras.layers.Lambda(sampling, output_shape=(32,))([z_mean, z_log_var])
@@ -246,28 +238,6 @@ def get_classifier(encoded):
     return classification
 
 
-class CustomVariationalLayer(tf.keras.layers.Layer):
-    def __init__(self, **kwargs):
-        self.is_placeholder = True
-        super(CustomVariationalLayer, self).__init__(**kwargs)
-
-    def vae_loss(self, x, x_decoded_mean_squash):
-        print(z_log_var)
-        print(z_mean)
-        x = K.flatten(x)
-        x_decoded_mean_squash = K.flatten(x_decoded_mean_squash)
-        xent_loss = img_rows * img_columns * tf.keras.metrics.binary_crossentropy(x, x_decoded_mean_squash)
-        kl_loss = - 0.5 * K.mean(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
-        return K.mean(xent_loss + kl_loss)
-
-    def call(self, inputs):
-        x = inputs[0]
-        x_decoded_mean_squash = inputs[1]
-        loss = self.vae_loss(x, x_decoded_mean_squash)
-        self.add_loss(loss, inputs=inputs)
-        return x
-
-
 def train_networks(training_percentage, filename, experiment):
 
     EPOCHS = constants.model_epochs
@@ -304,7 +274,7 @@ def train_networks(training_percentage, filename, experiment):
         encoded = get_encoder(input_img)
         classified = get_classifier(encoded)
         decoded = get_decoder(encoded)
-        model = Model(inputs=input_img, outputs=CustomVariationalLayer()([classified, decoded]))
+        model = Model(inputs=input_img, outputs=[classified, decoded])
 
         model.compile(loss=['categorical_crossentropy', 'binary_crossentropy'],
                       optimizer='adam',
@@ -414,7 +384,7 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
         classifier = Model(model.input, model.output[0])
         no_hot = to_categorical(testing_labels)
         classifier.compile(
-            optimizer='rmsprop', loss='categorical_crossentropy', metrics='accuracy')
+            optimizer='adam', loss='categorical_crossentropy', metrics='accuracy')
         history = classifier.evaluate(
             testing_data, no_hot, batch_size=BATCH_SIZE, verbose=1, return_dict=True)
         print(history)
