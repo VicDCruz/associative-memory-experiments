@@ -175,7 +175,7 @@ def get_encoder(input_img):
                input_shape=(img_columns, img_rows, constants.colors))(input_img)
     x = useBlockEncoder(x, 32, kernelSize=3)
     x = useBlockEncoder(x, 64, kernelSize=3)
-    x = useBlockEncoder(x, 128, kernelSize=3)
+    x = useBlockEncoder(x, 128, repeat=2, kernelSize=3)
     x = useBlockEncoder(x, constants.domain, kernelSize=3, strides=1)
 
     x = LayerNormalization()(x)
