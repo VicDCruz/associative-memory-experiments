@@ -25,6 +25,9 @@ from joblib import Parallel, delayed
 from tensorflow.keras import backend as K
 # import png
 
+from tensorflow.python.framework.ops import disable_eager_execution
+disable_eager_execution()
+
 import constants
 
 img_rows = 32
