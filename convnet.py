@@ -23,6 +23,7 @@ from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Flatte
 from tensorflow.keras.utils import to_categorical
 from joblib import Parallel, delayed
 from tensorflow.keras import backend as K
+from tensorflow.python.ops.gen_nn_ops import MaxPool
 # import png
 
 import constants
@@ -170,13 +171,17 @@ def get_encoder(input_img):
     # conv_3 = Conv2D(64, kernel_size=5, activation='relu')(drop_1)
     # pool_3 = MaxPooling2D((2, 2))(conv_3)
     # drop_2 = Dropout(0.4)(pool_3)
+    layers = []
 
     x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
                input_shape=(img_columns, img_rows, constants.colors))(input_img)
     x = useBlockEncoder(x, 32, kernelSize=3)
-    x = MaxPooling2D((2, 2))(x)
+    layers.append(x)
     x = useBlockEncoder(x, 64, kernelSize=3)
+    layers.append(x)
     x = useBlockEncoder(x, 128, kernelSize=3)
+    layers.append(x)
+    x = MaxPooling2D((2, 2))(x)
     x = useBlockEncoder(x, constants.domain, kernelSize=3, strides=1)
     x = MaxPooling2D((2, 2))(x)
     x = LayerNormalization()(x)
@@ -184,7 +189,7 @@ def get_encoder(input_img):
     # Produces an array of size equal to constants.domain.
     code = Flatten()(x)
 
-    return code
+    return code, layers
 
 
 def sampling(args):
@@ -194,7 +199,7 @@ def sampling(args):
     return z_mean + K.exp(z_log_var) * epsilon
 
 
-def get_decoder(encoded):
+def get_decoder(encoded, layers):
     hidden = Dense(32, activation='relu')(encoded)
     z_mean = Dense(32)(hidden)
     z_log_var = Dense(32)(hidden)
@@ -203,18 +208,21 @@ def get_decoder(encoded):
     hid_decoded = decoder_hid(z)
 
     # dense = Dense(units=2 * 2 * 512, activation='relu', input_shape=(constants.domain, ))(encoded)
-    dense = Dense(units=8 * 8 * 128, activation='relu', input_shape=(constants.domain, ))(hid_decoded)
     # dense = Dense(units=4 * 4 * 32, activation='relu')(encoded)
-    reshape = Reshape((8, 8, 128))(dense)
-    # x = useBlockDecoder(reshape, 256, kernelSize=5)
-    # x = Dropout(0.4)(x)
-    x = useBlockDecoder(reshape, 128, kernelSize=5)
+    dense = Dense(units=2 * 2 * 64, activation='relu', input_shape=(constants.domain, ))(hid_decoded)
+    reshape = Reshape((2, 2, 64))(dense)
+    tmp = useBlockDecoder(reshape, 256, kernelSize=5)
+    x = tf.keras.layers.Concatenate()([tmp, layers[2]])
     x = Dropout(0.4)(x)
-    x = useBlockDecoder(reshape, 64, kernelSize=5)
+    tmp = useBlockDecoder(x, 128, kernelSize=3)
+    x = tf.keras.layers.Concatenate()([tmp, layers[1]])
+    x = Dropout(0.4)(x)
+    tmp = useBlockDecoder(x, 64, kernelSize=3)
+    x = tf.keras.layers.Concatenate()([tmp, layers[0]])
     x = Dropout(0.4)(x)
     x = useBlockDecoder(x, 32, kernelSize=3)
     drop_2 = Dropout(0.4)(x)
-    output_img = Conv2D(constants.colors, kernel_size=3, strides=1,
+    output_img = Conv2DTranspose(constants.colors, kernel_size=3, strides=1,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
 
     # Produces an image of same size and channels as originals.
@@ -271,9 +279,9 @@ def train_networks(training_percentage, filename, experiment):
             training_labels = labels[j:i]
 
         input_img = Input(shape=(img_columns, img_rows, constants.colors))
-        encoded = get_encoder(input_img)
+        encoded, layers = get_encoder(input_img)
         classified = get_classifier(encoded)
-        decoded = get_decoder(encoded)
+        decoded = get_decoder(encoded, layers)
         model = Model(inputs=input_img, outputs=[classified, decoded])
 
         model.compile(loss=['categorical_crossentropy', 'binary_crossentropy'],
