@@ -181,7 +181,7 @@ def get_encoder(input_img, useMemory=False):
                 input_shape=(img_columns, img_rows, constants.colors))(input_img)
     else:
         x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
-                input_shape=(constants.domain))(input_img)
+                input_shape=(constants.domain, ))(input_img)
     x = useBlockEncoder(x, 32, kernelSize=3)
     layersTmp.append(x)
     x = useBlockEncoder(x, 64, kernelSize=3)
