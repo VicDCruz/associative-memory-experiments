@@ -272,7 +272,7 @@ def store_images(original, produced, directory, stage, idx, label):
     img = Image.fromarray(pixels, 'RGB')
     img.save(original_filename)
     # png.from_array(pixels, 'L;8').save(original_filename)
-    pixels = produced.reshape(img_columns, img_rows, constants.colors)
+    pixels = produced.reshape(img_columns, img_rows, constants.colors) * 255
     pixels = pixels.round().astype(np.uint8)
     img = Image.fromarray(pixels, 'RGB')
     img.save(produced_filename)
