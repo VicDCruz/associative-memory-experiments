@@ -205,7 +205,7 @@ def sampling(args):
     return z_mean + K.exp(z_log_var) * epsilon
 
 
-def get_decoder(encoded, layers):
+def get_decoder(encoded, layers=[]):
     hidden = Dense(32, activation='relu')(encoded)
     z_mean = Dense(32)(hidden)
     z_log_var = Dense(32)(hidden)
@@ -218,13 +218,22 @@ def get_decoder(encoded, layers):
     dense = Dense(units=2 * 2 * 64, activation='relu', input_shape=(constants.domain, ))(hid_decoded)
     reshape = Reshape((2, 2, 64))(dense)
     tmp = useBlockDecoder(reshape, 256, kernelSize=5)
-    x = tf.keras.layers.Concatenate()([tmp, layers[2]])
+    if len(layers) > 0:
+        x = tf.keras.layers.Concatenate()([tmp, layers[2]])
+    else:
+        x = tmp
     x = Dropout(0.4)(x)
     tmp = useBlockDecoder(x, 128, kernelSize=3)
-    x = tf.keras.layers.Concatenate()([tmp, layers[1]])
+    if len(layers) > 0:
+        x = tf.keras.layers.Concatenate()([tmp, layers[1]])
+    else:
+        x = tmp
     x = Dropout(0.4)(x)
     tmp = useBlockDecoder(x, 64, kernelSize=3)
-    x = tf.keras.layers.Concatenate()([tmp, layers[0]])
+    if len(layers) > 0:
+        x = tf.keras.layers.Concatenate()([tmp, layers[0]])
+    else:
+        x = tmp
     x = Dropout(0.4)(x)
     x = useBlockDecoder(x, 32, kernelSize=3)
     drop_2 = Dropout(0.4)(x)
@@ -489,8 +498,7 @@ def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
 
         # Drop the encoder
         input_mem = Input(shape=(constants.domain, ))
-        get_encoder(Input(shape=(img_columns, img_rows, constants.colors)))
-        decoded = get_decoder(input_mem, layersEncoder)
+        decoded = get_decoder(input_mem)
         decoder = Model(inputs=input_mem, outputs=decoded)
         decoder.summary()
 
