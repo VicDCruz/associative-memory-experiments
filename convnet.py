@@ -162,7 +162,7 @@ def useBlockDecoder(input, filters, repeat=1, kernelSize=4):
     return x
 
 
-def get_encoder(input_img, useMemory=True):
+def get_encoder(input_img, useMemory=False):
 
     # Convolutional Encoder
     # conv_1 = Conv2D(32, kernel_size=3, activation='relu', padding='same',
@@ -493,7 +493,7 @@ def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
 
         # Drop the encoder
         input_mem = Input(shape=(constants.domain, ))
-        get_encoder(Input(shape=(img_columns, img_rows, constants.colors)))
+        get_encoder(Input(shape=(img_columns, img_rows, constants.colors)), True)
         decoded = get_decoder(input_mem)
         decoder = Model(inputs=input_mem, outputs=decoded)
         decoder.summary()
