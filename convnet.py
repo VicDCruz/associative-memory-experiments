@@ -193,10 +193,8 @@ def get_decoder(encoded):
     reshape = Reshape((4, 4, 32))(dense)
     x = useBlockDecoder(reshape, 128, repeat=2)
     x = MaxPooling2D((2, 2), padding='same')(x)
-    x = Dropout(0.4)(x)
     x = useBlockDecoder(x, 64)
     x = MaxPooling2D((2, 2), padding='same')(x)
-    x = Dropout(0.4)(x)
     x = useBlockDecoder(x, 32, repeat=2)
     drop_2 = Dropout(0.4)(x)
     output_img = Conv2D(constants.colors, kernel_size=3, strides=1,
