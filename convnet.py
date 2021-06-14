@@ -162,7 +162,7 @@ def useBlockDecoder(input, filters, repeat=1, kernelSize=4):
     return x
 
 
-def get_encoder(input_img):
+def get_encoder(input_img, useMemory=True):
 
     # Convolutional Encoder
     # conv_1 = Conv2D(32, kernel_size=3, activation='relu', padding='same',
@@ -184,6 +184,10 @@ def get_encoder(input_img):
     layersTmp.append(x)
     x = useBlockEncoder(x, 128, kernelSize=3)
     layersTmp.append(x)
+    if useMemory:
+        global layersEncoder
+        layersEncoder = layersTmp
+        return
     x = MaxPooling2D((2, 2))(x)
     x = useBlockEncoder(x, constants.domain, kernelSize=3, strides=1)
     x = MaxPooling2D((2, 2))(x)
@@ -218,22 +222,13 @@ def get_decoder(encoded, layers=[]):
     dense = Dense(units=2 * 2 * 64, activation='relu', input_shape=(constants.domain, ))(hid_decoded)
     reshape = Reshape((2, 2, 64))(dense)
     tmp = useBlockDecoder(reshape, 256, kernelSize=5)
-    if len(layers) > 0:
-        x = tf.keras.layers.Concatenate()([tmp, layers[2]])
-    else:
-        x = tmp
+    x = tf.keras.layers.Concatenate()([tmp, layers[2]])
     x = Dropout(0.4)(x)
     tmp = useBlockDecoder(x, 128, kernelSize=3)
-    if len(layers) > 0:
-        x = tf.keras.layers.Concatenate()([tmp, layers[1]])
-    else:
-        x = tmp
+    x = tf.keras.layers.Concatenate()([tmp, layers[1]])
     x = Dropout(0.4)(x)
     tmp = useBlockDecoder(x, 64, kernelSize=3)
-    if len(layers) > 0:
-        x = tf.keras.layers.Concatenate()([tmp, layers[0]])
-    else:
-        x = tmp
+    x = tf.keras.layers.Concatenate()([tmp, layers[0]])
     x = Dropout(0.4)(x)
     x = useBlockDecoder(x, 32, kernelSize=3)
     drop_2 = Dropout(0.4)(x)
@@ -498,6 +493,7 @@ def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
 
         # Drop the encoder
         input_mem = Input(shape=(constants.domain, ))
+        get_encoder(Input(shape=(img_columns, img_rows, constants.colors)))
         decoded = get_decoder(input_mem)
         decoder = Model(inputs=input_mem, outputs=decoded)
         decoder.summary()
