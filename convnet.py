@@ -244,7 +244,7 @@ def train_networks(training_percentage, filename, experiment):
 
         model.summary()
 
-        es_cb = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=2, verbose=1, mode='auto')
+        es_cb = tf.keras.callbacks.EarlyStopping(monitor='accuracy', patience=2, verbose=1, mode='auto')
         history = model.fit(training_data,
                             (training_labels, training_data),
                             batch_size=BATCH_SIZE,
