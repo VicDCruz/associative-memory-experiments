@@ -494,7 +494,7 @@ def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
         # Drop the encoder
         input_mem = Input(shape=(constants.domain, ))
         get_encoder(Input(shape=(img_columns, img_rows, constants.colors)), True)
-        decoded = get_decoder(input_mem)
+        decoded = get_decoder(input_mem, layersEncoder)
         decoder = Model(inputs=input_mem, outputs=decoded)
         decoder.summary()
 
