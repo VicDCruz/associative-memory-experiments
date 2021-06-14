@@ -263,8 +263,8 @@ def train_networks(training_percentage, filename, experiment):
                             validation_data=(testing_data,
                                              {'classification': testing_labels, 'autoencoder': testing_data}),
                             verbose=2,
-                            callbacks=[es_cb],
-                            shuffle=True)
+                            callbacks=[es_cb])
+                            # shuffle=True)
 
         histories.append(history)
         model.save(constants.model_filename(filename, n))
