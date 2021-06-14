@@ -208,7 +208,8 @@ def sampling(args):
     return z_mean + K.exp(z_log_var) * epsilon
 
 
-def get_decoder(encoded, layers=[]):
+def get_decoder(encoded, layers):
+    print(len(layers))
     hidden = Dense(32, activation='relu')(encoded)
     z_mean = Dense(32)(hidden)
     z_log_var = Dense(32)(hidden)
