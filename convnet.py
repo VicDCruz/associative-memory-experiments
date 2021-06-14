@@ -41,8 +41,6 @@ RIGHT_SIDE = 3
 VERTICAL_BARS = 4
 HORIZONTAL_BARS = 5
 
-layersEncoder = []
-
 
 def print_error(*s):
     print('Error:', *s, file=sys.stderr)
@@ -174,20 +172,12 @@ def get_encoder(input_img, useMemory=False):
     # conv_3 = Conv2D(64, kernel_size=5, activation='relu')(drop_1)
     # pool_3 = MaxPooling2D((2, 2))(conv_3)
     # drop_2 = Dropout(0.4)(pool_3)
-    global layersEncoder
-    layersTmp = []
 
     x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
             input_shape=(img_columns, img_rows, constants.colors))(input_img)
     x = useBlockEncoder(x, 32, kernelSize=3)
-    layersTmp.append(x)
     x = useBlockEncoder(x, 64, kernelSize=3)
-    layersTmp.append(x)
     x = useBlockEncoder(x, 128, kernelSize=3)
-    layersTmp.append(x)
-    if useMemory:
-        layersEncoder = layersTmp
-        return
     x = MaxPooling2D((2, 2))(x)
     x = useBlockEncoder(x, constants.domain, kernelSize=3, strides=1)
     x = MaxPooling2D((2, 2))(x)
@@ -195,8 +185,6 @@ def get_encoder(input_img, useMemory=False):
 
     # Produces an array of size equal to constants.domain.
     code = Flatten()(x)
-
-    layersEncoder = layersTmp
 
     return code
 
@@ -209,7 +197,6 @@ def sampling(args):
 
 
 def get_decoder(encoded, layers):
-    print(len(layers))
     hidden = Dense(32, activation='relu')(encoded)
     z_mean = Dense(32)(hidden)
     z_log_var = Dense(32)(hidden)
@@ -221,14 +208,11 @@ def get_decoder(encoded, layers):
     # dense = Dense(units=4 * 4 * 32, activation='relu')(encoded)
     dense = Dense(units=2 * 2 * 64, activation='relu', input_shape=(constants.domain, ))(hid_decoded)
     reshape = Reshape((2, 2, 64))(dense)
-    tmp = useBlockDecoder(reshape, 256, kernelSize=5)
-    x = tf.keras.layers.Concatenate()([tmp, layers[2]])
+    x = useBlockDecoder(reshape, 256, kernelSize=5)
     x = Dropout(0.4)(x)
-    tmp = useBlockDecoder(x, 128, kernelSize=3)
-    x = tf.keras.layers.Concatenate()([tmp, layers[1]])
+    x = useBlockDecoder(x, 128, kernelSize=3)
     x = Dropout(0.4)(x)
-    tmp = useBlockDecoder(x, 64, kernelSize=3)
-    x = tf.keras.layers.Concatenate()([tmp, layers[0]])
+    x = useBlockDecoder(x, 64, kernelSize=3)
     x = Dropout(0.4)(x)
     x = useBlockDecoder(x, 32, kernelSize=3)
     drop_2 = Dropout(0.4)(x)
@@ -291,7 +275,7 @@ def train_networks(training_percentage, filename, experiment):
         input_img = Input(shape=(img_columns, img_rows, constants.colors))
         encoded = get_encoder(input_img)
         classified = get_classifier(encoded)
-        decoded = get_decoder(encoded, layersEncoder)
+        decoded = get_decoder(encoded)
         model = Model(inputs=input_img, outputs=[classified, decoded])
 
         model.compile(loss=['categorical_crossentropy', 'binary_crossentropy'],
@@ -493,8 +477,7 @@ def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
 
         # Drop the encoder
         input_mem = Input(shape=(constants.domain, ))
-        get_encoder(Input(shape=(img_columns, img_rows, constants.colors)), True)
-        decoded = get_decoder(input_mem, layersEncoder)
+        decoded = get_decoder(input_mem)
         decoder = Model(inputs=input_mem, outputs=decoded)
         decoder.summary()
 
