@@ -162,7 +162,7 @@ def useBlockDecoder(input, filters, repeat=1, kernelSize=4):
     return x
 
 
-def get_encoder(input_img, useMemory=False):
+def get_encoder(input_img):
 
     # Convolutional Encoder
     # conv_1 = Conv2D(32, kernel_size=3, activation='relu', padding='same',
@@ -176,12 +176,8 @@ def get_encoder(input_img, useMemory=False):
     # drop_2 = Dropout(0.4)(pool_3)
     layersTmp = []
 
-    if not useMemory:
-        x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
-                input_shape=(img_columns, img_rows, constants.colors))(input_img)
-    else:
-        dense = Dense(units=32, activation='relu', input_shape=(constants.domain, ))(input_img)
-        x = Reshape((32, 1, 1))(dense)
+    x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
+            input_shape=(img_columns, img_rows, constants.colors))(input_img)
     x = useBlockEncoder(x, 32, kernelSize=3)
     layersTmp.append(x)
     x = useBlockEncoder(x, 64, kernelSize=3)
@@ -493,7 +489,7 @@ def remember(experiment, occlusion=None, bars_type=None, tolerance=0):
 
         # Drop the encoder
         input_mem = Input(shape=(constants.domain, ))
-        get_encoder(input_mem, True)
+        get_encoder(Input(shape=(img_columns, img_rows, constants.colors)))
         decoded = get_decoder(input_mem, layersEncoder)
         decoder = Model(inputs=input_mem, outputs=decoded)
         decoder.summary()
