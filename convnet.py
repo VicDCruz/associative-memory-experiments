@@ -32,7 +32,7 @@ import constants
 img_rows = 32
 img_columns = 32
 
-BATCH_SIZE = 128
+BATCH_SIZE = 32
 
 TOP_SIDE = 0
 BOTTOM_SIDE = 1
@@ -144,46 +144,29 @@ def useBlockEncoder(input, filters, repeat=1, kernelSize=4, strides=2):
     return x
 
 
-def useBlockDecoder(input, filters, repeat=1, kernelSize=4):
+def useBlockDecoder(input, filters, repeat=1):
     """
     Convolution block of 2 layers
     """
     x = input
     for _ in range(repeat):
-        x = Conv2DTranspose(filters, kernelSize, strides=2, padding='same')(x)
+        x = Conv2D(filters, (3, 3), padding='same')(x)
         x = BatchNormalization()(x)
         x = Activation("relu")(x)
-        # if light:
-        #     x = Dropout(0.4)(x)
-        # else:
-        #     x = BatchNormalization()(x)
+        x = tf.keras.layers.UpSampling2D((2, 2))(x)
     return x
 
 
-def get_encoder(input_img, useMemory=False):
-
-    # Convolutional Encoder
-    # conv_1 = Conv2D(32, kernel_size=3, activation='relu', padding='same',
-    #                 input_shape=(img_columns, img_rows, constants.colors))(input_img)
-    # pool_1 = MaxPooling2D((2, 2))(conv_1)
-    # conv_2 = Conv2D(32, kernel_size=3, activation='relu')(pool_1)
-    # pool_2 = MaxPooling2D((2, 2))(conv_2)
-    # drop_1 = Dropout(0.4)(pool_2)
-    # conv_3 = Conv2D(64, kernel_size=5, activation='relu')(drop_1)
-    # pool_3 = MaxPooling2D((2, 2))(conv_3)
-    # drop_2 = Dropout(0.4)(pool_3)
-
+def get_encoder(input_img):
     x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
             input_shape=(img_columns, img_rows, constants.colors))(input_img)
-    x = useBlockEncoder(x, 32, kernelSize=3)
-    x = Dropout(0.4)(x)
     x = useBlockEncoder(x, 64, kernelSize=3)
-    x = Dropout(0.4)(x)
-    x = useBlockEncoder(x, 128, kernelSize=3)
-    x = MaxPooling2D((2, 2))(x)
-    x = Dropout(0.4)(x)
+    x = MaxPooling2D((2, 2), padding='same')(x)
+    x = useBlockEncoder(x, 32, kernelSize=3)
+    x = MaxPooling2D((2, 2), padding='same')(x)
+    x = useBlockEncoder(x, 16, kernelSize=3)
+    x = MaxPooling2D((2, 2), padding='same')(x)
     x = useBlockEncoder(x, constants.domain, kernelSize=5, strides=1)
-    x = MaxPooling2D((2, 2))(x)
     x = Dropout(0.4)(x)
 
     x = LayerNormalization()(x)
@@ -194,31 +177,14 @@ def get_encoder(input_img, useMemory=False):
     return code
 
 
-def sampling(args):
-    z_mean, z_log_var = args
-    epsilon = K.random_normal(shape=(K.shape(z_mean)[0], 32),
-                              mean=0., stddev=1.0)
-    return z_mean + K.exp(z_log_var) * epsilon
-
-
 def get_decoder(encoded):
-    hidden = Dense(32, activation='relu')(encoded)
-    z_mean = Dense(32)(hidden)
-    z_log_var = Dense(32)(hidden)
-    z = tf.keras.layers.Lambda(sampling, output_shape=(32,))([z_mean, z_log_var])
-    decoder_hid = Dense(32, activation='relu')
-    hid_decoded = decoder_hid(z)
-
-    # dense = Dense(units=2 * 2 * 512, activation='relu', input_shape=(constants.domain, ))(encoded)
-    # dense = Dense(units=4 * 4 * 32, activation='relu')(encoded)
-    dense = Dense(units=8 * 8 * 32, activation='relu', input_shape=(constants.domain, ))(hid_decoded)
-    reshape = Reshape((8, 8, 32))(dense)
-    x = useBlockDecoder(reshape, 65, kernelSize=5)
-    x = Dropout(0.4)(x)
-    x = useBlockDecoder(x, 32, kernelSize=3)
-    x = Dropout(0.4)(x)
+    dense = Dense(units=4 * 4 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
+    reshape = Reshape((4, 4, 32))(dense)
+    x = useBlockDecoder(reshape, 16)
+    x = useBlockDecoder(x, 32)
+    x = useBlockDecoder(x, 64)
     drop_2 = Dropout(0.4)(x)
-    output_img = Conv2DTranspose(constants.colors, kernel_size=3, strides=1,
+    output_img = Conv2D(constants.colors, kernel_size=3, strides=1,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
 
     # Produces an image of same size and channels as originals.
@@ -226,14 +192,6 @@ def get_decoder(encoded):
 
 
 def get_classifier(encoded):
-    # mean = Dense(constants.domain*2, activation='softplus')(encoded)
-    # sigma = Dense(constants.domain*2, activation='relu')(encoded)
-    # sqr = tf.sqrt(tf.exp(sigma))
-    # z = mean + tf.multiply(sqr, tf.random.normal(shape=tf.shape(sqr)))
-    # drop = Dropout(0.4)(z)
-    # classification = Dense(10, activation='softmax',
-    #                        name='classification')(drop)
-
     dense_1 = Dense(constants.domain*2, activation='relu')(encoded)
     drop = Dropout(0.4)(dense_1)
     classification = Dense(10, activation='softmax',
@@ -286,15 +244,13 @@ def train_networks(training_percentage, filename, experiment):
 
         model.summary()
 
-        checkpoint = tf.keras.callbacks.ModelCheckpoint('best_model.h5', verbose=1, save_best_only=True, save_weights_only=True)
         history = model.fit(training_data,
                             (training_labels, training_data),
                             batch_size=BATCH_SIZE,
                             epochs=EPOCHS,
                             validation_data=(testing_data,
                                              {'classification': testing_labels, 'autoencoder': testing_data}),
-                            verbose=2,
-                            callbacks=[checkpoint])
+                            verbose=2)
 
         histories.append(history)
         model.save(constants.model_filename(filename, n))
