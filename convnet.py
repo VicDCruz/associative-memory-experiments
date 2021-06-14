@@ -24,7 +24,6 @@ from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Flatte
 from tensorflow.keras.utils import to_categorical
 from joblib import Parallel, delayed
 from tensorflow.keras import backend as K
-from tensorflow.python.ops.gen_nn_ops import MaxPool
 # import png
 
 import constants
@@ -273,8 +272,8 @@ def store_images(original, produced, directory, stage, idx, label):
     img = Image.fromarray(pixels, 'RGB')
     img.save(original_filename)
     # png.from_array(pixels, 'L;8').save(original_filename)
-    pixels = produced.reshape(img_columns, img_rows, constants.colors) * 255
-    pixels = pixels.round().astype(np.uint8)
+    pixels = produced.reshape(img_columns, img_rows, constants.colors)
+    # pixels = pixels.round().astype(np.uint8)
     img = Image.fromarray(pixels, 'RGB')
     img.save(produced_filename)
     # png.from_array(pixels, 'L;8').save(produced_filename)
