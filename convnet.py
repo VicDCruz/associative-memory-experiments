@@ -189,13 +189,11 @@ def get_decoder(encoded):
     hid_decoded = decoder_hid(z)
 
     # dense = Dense(units=4 * 4 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
-    dense = Dense(units=4 * 4 * 32, activation='relu', input_shape=(constants.domain, ))(hid_decoded)
-    reshape = Reshape((4, 4, 32))(dense)
-    x = useBlockDecoder(reshape, 128, repeat=2)
-    x = MaxPooling2D((2, 2), padding='same')(x)
+    dense = Dense(units=4 * 4 * 128, activation='relu', input_shape=(constants.domain, ))(hid_decoded)
+    reshape = Reshape((4, 4, 128))(dense)
+    x = useBlockDecoder(reshape, 128)
     x = useBlockDecoder(x, 64)
-    x = useBlockDecoder(x, 32, repeat=2)
-    x = MaxPooling2D((2, 2), padding='same')(x)
+    x = useBlockDecoder(x, 32)
     drop_2 = Dropout(0.4)(x)
     output_img = Conv2D(constants.colors, kernel_size=3, strides=1,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
