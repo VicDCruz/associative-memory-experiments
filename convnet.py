@@ -181,7 +181,7 @@ def get_encoder(input_img, useMemory=False):
                 input_shape=(img_columns, img_rows, constants.colors))(input_img)
     else:
         dense = Dense(units=32, activation='relu', input_shape=(constants.domain, ))(input_img)
-        x = Reshape((32, 1))(dense)
+        x = Reshape((32, 1, 1))(dense)
     x = useBlockEncoder(x, 32, kernelSize=3)
     layersTmp.append(x)
     x = useBlockEncoder(x, 64, kernelSize=3)
