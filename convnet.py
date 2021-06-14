@@ -32,7 +32,7 @@ import constants
 img_rows = 32
 img_columns = 32
 
-BATCH_SIZE = 32
+BATCH_SIZE = 128
 
 TOP_SIDE = 0
 BOTTOM_SIDE = 1
@@ -244,13 +244,16 @@ def train_networks(training_percentage, filename, experiment):
 
         model.summary()
 
+        es_cb = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=2, verbose=1, mode='auto')
         history = model.fit(training_data,
                             (training_labels, training_data),
                             batch_size=BATCH_SIZE,
                             epochs=EPOCHS,
                             validation_data=(testing_data,
                                              {'classification': testing_labels, 'autoencoder': testing_data}),
-                            verbose=2)
+                            verbose=2,
+                            callbacks=[es_cb],
+                            shuffle=True)
 
         histories.append(history)
         model.save(constants.model_filename(filename, n))
