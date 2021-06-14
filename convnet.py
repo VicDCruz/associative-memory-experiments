@@ -174,6 +174,7 @@ def get_encoder(input_img, useMemory=False):
     # conv_3 = Conv2D(64, kernel_size=5, activation='relu')(drop_1)
     # pool_3 = MaxPooling2D((2, 2))(conv_3)
     # drop_2 = Dropout(0.4)(pool_3)
+    global layersEncoder
     layersTmp = []
 
     x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
@@ -185,7 +186,6 @@ def get_encoder(input_img, useMemory=False):
     x = useBlockEncoder(x, 128, kernelSize=3)
     layersTmp.append(x)
     if useMemory:
-        global layersEncoder
         layersEncoder = layersTmp
         return
     x = MaxPooling2D((2, 2))(x)
@@ -196,7 +196,6 @@ def get_encoder(input_img, useMemory=False):
     # Produces an array of size equal to constants.domain.
     code = Flatten()(x)
 
-    global layersEncoder
     layersEncoder = layersTmp
 
     return code
