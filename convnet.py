@@ -143,27 +143,27 @@ def useBlockEncoder(input, filters, repeat=1, kernelSize=4, strides=2):
     return x
 
 
-def useBlockDecoder(input, filters, repeat=1):
+def useBlockDecoder(input, filters, repeat=1, kernelSize=3):
     """
     Convolution block of 2 layers
     """
     x = input
     for _ in range(repeat):
-        x = Conv2D(filters, (3, 3), padding='same')(x)
+        x = Conv2DTranspose(filters, kernelSize, strides=2, padding='same')(x)
         x = BatchNormalization()(x)
         x = Activation("relu")(x)
-        x = tf.keras.layers.UpSampling2D((2, 2))(x)
     return x
 
 
 def get_encoder(input_img):
     x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
             input_shape=(img_columns, img_rows, constants.colors))(input_img)
-    x = useBlockEncoder(x, 64, kernelSize=3)
-    x = MaxPooling2D((2, 2), padding='same')(x)
     x = useBlockEncoder(x, 32, kernelSize=3)
-    x = MaxPooling2D((2, 2), padding='same')(x)
-    x = useBlockEncoder(x, 16, kernelSize=3)
+    x = Dropout(0.4)(x)
+    x = useBlockEncoder(x, 64, kernelSize=3)
+    x = Dropout(0.4)(x)
+    x = useBlockEncoder(x, 128, kernelSize=3)
+    x = Dropout(0.4)(x)
     x = MaxPooling2D((2, 2), padding='same')(x)
     x = useBlockEncoder(x, constants.domain, kernelSize=5, strides=1)
     x = Dropout(0.4)(x)
@@ -179,9 +179,11 @@ def get_encoder(input_img):
 def get_decoder(encoded):
     dense = Dense(units=4 * 4 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
     reshape = Reshape((4, 4, 32))(dense)
-    x = useBlockDecoder(reshape, 16)
-    x = useBlockDecoder(x, 32)
+    x = useBlockDecoder(reshape, 128)
+    drop_2 = Dropout(0.4)(x)
     x = useBlockDecoder(x, 64)
+    drop_2 = Dropout(0.4)(x)
+    x = useBlockDecoder(x, 32)
     drop_2 = Dropout(0.4)(x)
     output_img = Conv2D(constants.colors, kernel_size=3, strides=1,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
