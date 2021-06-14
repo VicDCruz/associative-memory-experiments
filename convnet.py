@@ -131,7 +131,7 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
     return (all_data, all_labels)
 
 
-def useBlockEncoder(input, filters, repeat=1, kernelSize=(3, 3), strides=2):
+def useBlockEncoder(input, filters, repeat=1, kernelSize=3, strides=2):
     """
     Convolution block of 2 layers
     """
@@ -159,12 +159,10 @@ def get_encoder(input_img):
     x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
             input_shape=(img_columns, img_rows, constants.colors))(input_img)
     x = useBlockEncoder(x, 32, repeat=2)
-    x = Dropout(0.4)(x)
     x = useBlockEncoder(x, 64)
     x = useBlockEncoder(x, 128, repeat=2)
-    x = Dropout(0.4)(x)
     x = MaxPooling2D((2, 2), padding='same')(x)
-    x = useBlockEncoder(x, constants.domain, kernelSize=(5, 5), strides=1)
+    x = useBlockEncoder(x, constants.domain, kernelSize=5, strides=1)
     x = Dropout(0.4)(x)
 
     x = LayerNormalization()(x)
@@ -193,11 +191,13 @@ def get_decoder(encoded):
     # dense = Dense(units=4 * 4 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
     dense = Dense(units=4 * 4 * 32, activation='relu', input_shape=(constants.domain, ))(hid_decoded)
     reshape = Reshape((4, 4, 32))(dense)
-    x = useBlockDecoder(reshape, 128)
-    drop_2 = Dropout(0.4)(x)
+    x = useBlockDecoder(reshape, 128, repeat=2)
+    x = MaxPooling2D((2, 2), padding='same')(x)
+    x = Dropout(0.4)(x)
     x = useBlockDecoder(x, 64)
-    drop_2 = Dropout(0.4)(x)
-    x = useBlockDecoder(x, 32)
+    x = MaxPooling2D((2, 2), padding='same')(x)
+    x = Dropout(0.4)(x)
+    x = useBlockDecoder(x, 32, repeat=2)
     drop_2 = Dropout(0.4)(x)
     output_img = Conv2D(constants.colors, kernel_size=3, strides=1,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
