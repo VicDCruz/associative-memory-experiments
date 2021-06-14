@@ -180,8 +180,8 @@ def get_encoder(input_img, useMemory=False):
         x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
                 input_shape=(img_columns, img_rows, constants.colors))(input_img)
     else:
-        dense = Dense(units=32 * 32 * 64, activation='relu', input_shape=(constants.domain, ))(input_img)
-        x = Reshape((32, 32, 64))(dense)
+        dense = Dense(units=32 * 32 * 3, activation='relu', input_shape=(constants.domain, ))(input_img)
+        x = Reshape((32, 32, 3))(dense)
     x = useBlockEncoder(x, 32, kernelSize=3)
     layersTmp.append(x)
     x = useBlockEncoder(x, 64, kernelSize=3)
