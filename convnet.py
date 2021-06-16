@@ -107,12 +107,14 @@ def get_data(experiment, occlusion = None, bars_type = None, one_hot = False):
     train_labels = train_labels.reshape(-1, )
     test_labels = test_labels.reshape(-1, )
 
-    # To grayscale 
-    train_images = np.mean(train_images, axis=3)
-    test_images = np.mean(test_images, axis=3)
-
     all_data = np.concatenate((train_images, test_images), axis=0)
     all_labels = np.concatenate((train_labels, test_labels), axis= 0)
+
+    # To grayscale 
+    all_data = np.mean(all_data, axis=3)
+    # To binary
+    all_data[all_data < 128] = 0 # Black
+    all_data[all_data >= 128] = 255 # White
 
     all_data = add_noise(all_data, experiment, occlusion, bars_type)
 
