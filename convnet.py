@@ -255,10 +255,10 @@ def store_images(original, produced, directory, stage, idx, label):
     produced_filename = constants.produced_image_filename(
         directory, stage, idx, label)
 
-    pixels = original.reshape(28, 28) * 255
+    pixels = original.reshape(32, 32) * 255
     pixels = pixels.round().astype(np.uint8)
     png.from_array(pixels, 'L;8').save(original_filename)
-    pixels = produced.reshape(28, 28) * 255
+    pixels = produced.reshape(32, 32) * 255
     pixels = pixels.round().astype(np.uint8)
     png.from_array(pixels, 'L;8').save(produced_filename)
 
@@ -269,9 +269,9 @@ def store_memories(labels, produced, features, directory, stage, msize):
         directory, msize, stage, idx, label)
 
     if np.isnan(np.sum(features)):
-        pixels = np.full((28, 28), 255)
+        pixels = np.full((32, 32), 255)
     else:
-        pixels = produced.reshape(28, 28) * 255
+        pixels = produced.reshape(32, 32) * 255
     pixels = pixels.round().astype(np.uint8)
     png.from_array(pixels, 'L;8').save(produced_filename)
 
