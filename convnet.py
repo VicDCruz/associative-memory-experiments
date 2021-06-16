@@ -153,8 +153,8 @@ def get_encoder(input_img):
 
 
 def get_decoder(encoded):
-    dense = Dense(units=4*4*32, activation='relu', input_shape=(64, ))(encoded)
-    reshape = Reshape((4, 4, 32))(dense)
+    dense = Dense(units=8*8*32, activation='relu', input_shape=(64, ))(encoded)
+    reshape = Reshape((8, 8, 32))(dense)
     trans_1 = Conv2DTranspose(64, kernel_size=3, strides=2,
                               padding='same', activation='relu')(reshape)
     drop_1 = Dropout(0.4)(trans_1)
