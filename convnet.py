@@ -103,8 +103,10 @@ def get_data(experiment, occlusion = None, bars_type = None, one_hot = False):
    # Load CIFAR10 data, as part of TensorFlow.
     cifar = tf.keras.datasets.cifar10
     (train_images, train_labels), (test_images, test_labels) = cifar.load_data()
+    train_labels = train_labels.reshape(-1, )
+    test_labels = test_labels.reshape(-1, )
 
-    # To greyscale 
+    # To grayscale 
     train_images = np.mean(train_images, axis=3)
     test_images = np.mean(test_images, axis=3)
 
