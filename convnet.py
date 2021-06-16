@@ -138,10 +138,10 @@ def get_encoder(input_img):
     conv_1 = Conv2D(32, kernel_size=3, activation='relu', padding='same',
                     input_shape=(img_columns, img_rows, 1))(input_img)
     pool_1 = MaxPooling2D((2, 2))(conv_1)
-    conv_2 = Conv2D(32, kernel_size=3, activation='relu')(pool_1)
+    conv_2 = Conv2D(32, kernel_size=3, activation='relu', padding='same')(pool_1)
     pool_2 = MaxPooling2D((2, 2))(conv_2)
     drop_1 = Dropout(0.4)(pool_2)
-    conv_3 = Conv2D(64, kernel_size=5, activation='relu')(drop_1)
+    conv_3 = Conv2D(64, kernel_size=5, activation='relu', padding='same')(drop_1)
     pool_3 = MaxPooling2D((2, 2))(conv_3)
     drop_2 = Dropout(0.4)(pool_3)
     norm = LayerNormalization()(drop_2)
@@ -153,8 +153,8 @@ def get_encoder(input_img):
 
 
 def get_decoder(encoded):
-    dense = Dense(units=7*7*32, activation='relu', input_shape=(64, ))(encoded)
-    reshape = Reshape((7, 7, 32))(dense)
+    dense = Dense(units=4*4*32, activation='relu', input_shape=(64, ))(encoded)
+    reshape = Reshape((4, 4, 32))(dense)
     trans_1 = Conv2DTranspose(64, kernel_size=3, strides=2,
                               padding='same', activation='relu')(reshape)
     drop_1 = Dropout(0.4)(trans_1)
