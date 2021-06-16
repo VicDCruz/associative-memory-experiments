@@ -36,7 +36,7 @@ VERTICAL_BARS = 4
 HORIZONTAL_BARS = 5
 
 truly_training_percentage = 0.80
-epochs = 30
+epochs = 100
 batch_size = 100
 
 
@@ -230,13 +230,15 @@ def train_networks(training_percentage, filename, experiment):
 
         model.summary()
 
+        es_cb = tf.keras.callbacks.EarlyStopping(monitor='autoencoder_accuracy', patience=2, verbose=1, mode='auto')
         history = model.fit(training_data,
                             (training_labels, training_data),
                             batch_size=batch_size,
                             epochs=epochs,
                             validation_data=(validation_data,
                                              {'classification': validation_labels, 'autoencoder': validation_data}),
-                            verbose=2)
+                            verbose=2,
+                            callbacks=[es_cb])
 
         histories.append(history)
         history = model.evaluate(testing_data,
