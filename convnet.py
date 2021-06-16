@@ -35,10 +35,6 @@ RIGHT_SIDE = 3
 VERTICAL_BARS = 4
 HORIZONTAL_BARS = 5
 
-truly_training_percentage = 0.80
-epochs = 100
-batch_size = 100
-
 def print_error(*s):
     print('Error:', *s, file = sys.stderr)
 
@@ -107,14 +103,13 @@ def get_data(experiment, occlusion = None, bars_type = None, one_hot = False):
    # Load CIFAR10 data, as part of TensorFlow.
     cifar = tf.keras.datasets.cifar10
     (train_images, train_labels), (test_images, test_labels) = cifar.load_data()
-    train_labels = train_labels.reshape(-1, )
-    test_labels = test_labels.reshape(-1, )
 
+    # To greyscale 
     train_images = np.mean(train_images, axis=3)
     test_images = np.mean(test_images, axis=3)
 
     all_data = np.concatenate((train_images, test_images), axis=0)
-    all_labels = np.concatenate((train_labels, test_labels), axis=0)
+    all_labels = np.concatenate((train_labels, test_labels), axis= 0)
 
     all_data = add_noise(all_data, experiment, occlusion, bars_type)
 
@@ -175,50 +170,41 @@ def get_classifier(encoded):
 
 def train_networks(training_percentage, filename, experiment):
 
+    EPOCHS = constants.model_epochs
     stages = constants.training_stages
 
     (data, labels) = get_data(experiment, one_hot=True)
 
     total = len(data)
-    step = total/stages
+    step = int(total/stages)
 
-    # Amount of training data, from which a percentage is used for
-    # validation.
-    training_size = int(total*training_percentage)
+    # Amount of testing data
+    atd = total - int(total*training_percentage)
 
     n = 0
     histories = []
-    for k in range(stages):
-        i = k*step
-        j = int(i + training_size) % total
-        i = int(i)
+    for i in range(0, total, step):
+        j = (i + atd) % total
 
         if j > i:
-            training_data = data[i:j]
-            training_labels = labels[i:j]
-            testing_data = np.concatenate((data[0:i], data[j:total]), axis=0)
-            testing_labels = np.concatenate((labels[0:i], labels[j:total]), axis=0)
+            testing_data = data[i:j]
+            testing_labels = labels[i:j]
+
+            training_data = np.concatenate((data[0:i], data[j:total]), axis=0)
+            training_labels = np.concatenate((labels[0:i], labels[j:total]), axis=0)
         else:
-            training_data = np.concatenate((data[i:total], data[0:j]), axis=0)
-            training_labels = np.concatenate((labels[i:total], labels[0:j]), axis=0)
-            testing_data = data[j:i]
-            testing_labels = labels[j:i]
+            testing_data = np.concatenate((data[i:total], data[0:j]), axis=0)
+            testing_labels = np.concatenate((labels[i:total], labels[0:j]), axis=0)
+            training_data = data[j:i]
+            training_labels = labels[j:i]
 
-        truly_training = int(training_size*truly_training_percentage)
-
-        validation_data = training_data[truly_training:]
-        validation_labels = training_labels[truly_training:]
-        training_data = training_data[:truly_training]
-        training_labels = training_labels[:truly_training]
-        
         input_img = Input(shape=(img_columns, img_rows, 1))
         encoded = get_encoder(input_img)
         classified = get_classifier(encoded)
         decoded = get_decoder(encoded)
-
         model = Model(inputs=input_img, outputs=[classified, decoded])
 
-        model.compile(loss=['categorical_crossentropy', 'mean_squared_error'],
+        model.compile(loss=['categorical_crossentropy', 'binary_crossentropy'],
                     optimizer='adam',
                     metrics='accuracy')
 
@@ -226,17 +212,13 @@ def train_networks(training_percentage, filename, experiment):
 
         history = model.fit(training_data,
                 (training_labels, training_data),
-                batch_size=batch_size,
-                epochs=epochs,
-                validation_data= (validation_data,
-                    {'classification': validation_labels, 'autoencoder': validation_data}),
+                batch_size=100,
+                epochs=EPOCHS,
+                validation_data= (testing_data,
+                    {'classification': testing_labels, 'autoencoder': testing_data}),
                 verbose=2)
 
         histories.append(history)
-        history = model.evaluate(testing_data,
-            (testing_labels, testing_data),return_dict=True)
-        histories.append(history)
-
         model.save(constants.model_filename(filename, n))
         n += 1
 
@@ -315,7 +297,7 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
         classifier = Model(model.input, model.output[0])
         no_hot = to_categorical(testing_labels)
         classifier.compile(optimizer='adam', loss='categorical_crossentropy', metrics='accuracy')
-        history = classifier.evaluate(testing_data, no_hot, batch_size=batch_size, verbose=1, return_dict=True)
+        history = classifier.evaluate(testing_data, no_hot, batch_size=100, verbose=1, return_dict=True)
         print(history)
         histories.append(history)
         model = Model(classifier.input, classifier.layers[-4].output)
@@ -406,11 +388,10 @@ def remember(experiment, occlusion = None, bars_type = None, tolerance = 0):
         produced_images = decoder.predict(testing_features)
         n = len(testing_labels)
 
-        Parallel(n_jobs=constants.n_jobs, verbose=5)(
-            delayed(store_images)(original, produced, constants.testing_directory(
-                experiment, occlusion, bars_type), i, j, label)
-            for (j, original, produced, label) in
-            zip(range(n), testing_data, produced_images, testing_labels))
+        Parallel(n_jobs=constants.n_jobs, verbose=5)( \
+            delayed(store_images)(original, produced, constants.testing_directory(experiment, occlusion, bars_type), i, j, label) \
+                for (j, original, produced, label) in \
+                    zip(range(n), testing_data, produced_images, testing_labels))
 
         total = len(memories)
         steps = len(constants.memory_fills)
