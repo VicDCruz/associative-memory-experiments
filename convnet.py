@@ -121,6 +121,7 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
 
     all_data = add_noise(all_data, experiment, occlusion, bars_type)
 
+    print(all_data.shape)
     all_data = all_data.reshape((60000, img_columns, img_rows))
     all_data = all_data.astype('float32') / 255
 
