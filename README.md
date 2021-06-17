@@ -53,3 +53,5 @@ limitations under the License.
 - [Autoencoder as Feature Extractor - CIFAR10](https://www.kaggle.com/mahtabshaan/autoencoder-as-feature-extractor-cifar10/notebook)
 - [Convolution padding and stride | Deep Learning Tutorial 25 (Tensorflow2.0, Keras & Python)](https://www.youtube.com/watch?v=oDAPkZ53zKk)
 - [Variational autoenconder - VAE (2.)](https://olaralex.com/variational-auto-encoder-with-cifar-10-2/)
+- [How to Develop a CNN From Scratch for CIFAR-10 Photo Classification](https://machinelearningmastery.com/how-to-develop-a-cnn-from-scratch-for-cifar-10-photo-classification/)
+- [Autoencoder de TensorFlow: Ejemplo de aprendizaje profundo](https://guru99.es/autoencoder-deep-learning/)
