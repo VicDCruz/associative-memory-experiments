@@ -111,7 +111,7 @@ def add_noise(data, experiment, occlusion=0, bars_type=None):
 
 def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
 
-   # Load CIFAR10 data, as part of TensorFlow.
+   # Load EMNIST data, as part of TensorFlow.
     (train_images, train_labels), (test_images, test_labels) = emnist.extract_training_samples(
         'letters'), emnist.extract_test_samples('letters')
     # train_labels = train_labels.reshape(-1, )

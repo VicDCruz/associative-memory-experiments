@@ -20,7 +20,7 @@ The following libraries need to be installed beforehand:
 The experiments were run using the Anaconda 3 distribution.
 
 ### Data
-The CIFAR10 database of handwritten digits, available throught TensorFlow 2.3, was used for all the experiments.
+The EMNIST database of handwritten digits, available throught TensorFlow 2.3, was used for all the experiments.
 
 ### Use
 
@@ -50,7 +50,7 @@ limitations under the License.
 
 # References
 - [Image Classification on CIFAR-10](https://paperswithcode.com/sota/image-classification-on-cifar-10)
-- [Autoencoder as Feature Extractor - CIFAR10](https://www.kaggle.com/mahtabshaan/autoencoder-as-feature-extractor-cifar10/notebook)
+- [Autoencoder as Feature Extractor - EMNIST](https://www.kaggle.com/mahtabshaan/autoencoder-as-feature-extractor-EMNIST/notebook)
 - [Convolution padding and stride | Deep Learning Tutorial 25 (Tensorflow2.0, Keras & Python)](https://www.youtube.com/watch?v=oDAPkZ53zKk)
 - [Variational autoenconder - VAE (2.)](https://olaralex.com/variational-auto-encoder-with-cifar-10-2/)
 - [How to Develop a CNN From Scratch for CIFAR-10 Photo Classification](https://machinelearningmastery.com/how-to-develop-a-cnn-from-scratch-for-cifar-10-photo-classification/)

@@ -16,14 +16,15 @@
 import numpy as np
 import png
 import tensorflow as tf
+import emnist
 import constants
 
 img_rows = 32
 img_columns = 32
 
-# Load CIFAR data, as part of TensorFlow.
-cifar = tf.keras.datasets.cifar10
-(train_images, train_labels), (test_images, test_labels) = cifar.load_data()
+# Load EMNIST data, as part of TensorFlow.
+(train_images, train_labels), (test_images, test_labels) = emnist.extract_training_samples(
+    'letters'), emnist.extract_test_samples('letters')
 
 data = np.concatenate((train_images, test_images), axis=0)
 labels = np.concatenate((train_labels, test_labels), axis=0)
