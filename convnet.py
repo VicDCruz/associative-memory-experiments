@@ -159,11 +159,11 @@ def useBlockDecoder(input, filters, repeat=1, kernelSize=3):
 
 
 def get_encoder(input_img):
-    x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
+    x = Conv2D(14, kernel_size=3, activation='relu', padding='same',
                input_shape=(img_columns, img_rows, constants.colors))(input_img)
-    x = useBlockEncoder(x, 32, repeat=2)
-    x = useBlockEncoder(x, 64)
-    x = useBlockEncoder(x, 128, repeat=2)
+    x = useBlockEncoder(x, 28, repeat=2)
+    x = useBlockEncoder(x, 56)
+    x = useBlockEncoder(x, 112)
     x = MaxPooling2D((2, 2), padding='same')(x)
     x = useBlockEncoder(x, constants.domain, kernelSize=5, strides=1)
     x = Dropout(0.4)(x)
@@ -184,17 +184,17 @@ def sampling(args):
 
 
 def get_decoder(encoded):
-    hidden = Dense(28, activation='relu')(encoded)
-    z_mean = Dense(28)(hidden)
-    z_log_var = Dense(28)(hidden)
-    z = tf.keras.layers.Lambda(
-        sampling, output_shape=(28,))([z_mean, z_log_var])
-    decoder_hid = Dense(28, activation='relu')
-    hid_decoded = decoder_hid(z)
+    # hidden = Dense(28, activation='relu')(encoded)
+    # z_mean = Dense(28)(hidden)
+    # z_log_var = Dense(28)(hidden)
+    # z = tf.keras.layers.Lambda(
+    #     sampling, output_shape=(28,))([z_mean, z_log_var])
+    # decoder_hid = Dense(28, activation='relu')
+    # hid_decoded = decoder_hid(z)
 
     # dense = Dense(units=4 * 4 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
     dense = Dense(units=7 * 7 * 42, activation='relu',
-                  input_shape=(constants.domain, ))(hid_decoded)
+                  input_shape=(constants.domain, ))(encoded)
     reshape = Reshape((7, 7, 42))(dense)
     # x = useBlockDecoder(reshape, 128)
     x = useBlockDecoder(reshape, 56)
