@@ -20,7 +20,7 @@ run_path = './runs'
 idx_digits = 3
 
 # Color layers
-colors = 3
+colors = 1
 
 
 def occlusion_suffix(occlusion):

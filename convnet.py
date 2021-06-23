@@ -17,6 +17,7 @@ from PIL import Image
 import sys
 import numpy as np
 import tensorflow as tf
+import emnist
 from tensorflow.keras import Model
 from tensorflow.keras import layers
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Flatten, Dense, \
@@ -28,8 +29,10 @@ from tensorflow.keras import backend as K
 
 import constants
 
-img_rows = 32
-img_columns = 32
+img_rows = 28
+img_columns = 28
+
+LABELS = 27
 
 BATCH_SIZE = 128
 
@@ -109,10 +112,10 @@ def add_noise(data, experiment, occlusion=0, bars_type=None):
 def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
 
    # Load CIFAR10 data, as part of TensorFlow.
-    cifar = tf.keras.datasets.cifar10
-    (train_images, train_labels), (test_images, test_labels) = cifar.load_data()
-    train_labels = train_labels.reshape(-1, )
-    test_labels = test_labels.reshape(-1, )
+    (train_images, train_labels), (test_images, test_labels) = emnist.extract_training_samples(
+        'letters'), emnist.extract_test_samples('letters')
+    # train_labels = train_labels.reshape(-1, )
+    # test_labels = test_labels.reshape(-1, )
 
     all_data = np.concatenate((train_images, test_images), axis=0)
     all_labels = np.concatenate((train_labels, test_labels), axis=0)
@@ -120,7 +123,7 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
     all_data = add_noise(all_data, experiment, occlusion, bars_type)
 
     all_data = all_data.reshape(
-        (60000, img_columns, img_rows, constants.colors))
+        (145600, img_columns, img_rows, constants.colors))
     all_data = all_data.astype('float32') / 255
 
     if one_hot:
@@ -157,7 +160,7 @@ def useBlockDecoder(input, filters, repeat=1, kernelSize=3):
 
 def get_encoder(input_img):
     x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
-            input_shape=(img_columns, img_rows, constants.colors))(input_img)
+               input_shape=(img_columns, img_rows, constants.colors))(input_img)
     x = useBlockEncoder(x, 32, repeat=2)
     x = useBlockEncoder(x, 64)
     x = useBlockEncoder(x, 128, repeat=2)
@@ -175,25 +178,27 @@ def get_encoder(input_img):
 
 def sampling(args):
     z_mean, z_log_var = args
-    epsilon = K.random_normal(shape=(K.shape(z_mean)[0], 32),
+    epsilon = K.random_normal(shape=(K.shape(z_mean)[0], 28),
                               mean=0., stddev=1.0)
     return z_mean + K.exp(z_log_var) * epsilon
 
 
 def get_decoder(encoded):
-    hidden = Dense(32, activation='relu')(encoded)
-    z_mean = Dense(32)(hidden)
-    z_log_var = Dense(32)(hidden)
-    z = tf.keras.layers.Lambda(sampling, output_shape=(32,))([z_mean, z_log_var])
-    decoder_hid = Dense(32, activation='relu')
+    hidden = Dense(28, activation='relu')(encoded)
+    z_mean = Dense(28)(hidden)
+    z_log_var = Dense(28)(hidden)
+    z = tf.keras.layers.Lambda(
+        sampling, output_shape=(28,))([z_mean, z_log_var])
+    decoder_hid = Dense(28, activation='relu')
     hid_decoded = decoder_hid(z)
 
     # dense = Dense(units=4 * 4 * 32, activation='relu', input_shape=(constants.domain, ))(encoded)
-    dense = Dense(units=4 * 4 * 128, activation='relu', input_shape=(constants.domain, ))(hid_decoded)
-    reshape = Reshape((4, 4, 128))(dense)
-    x = useBlockDecoder(reshape, 128)
-    x = useBlockDecoder(x, 64)
-    x = useBlockDecoder(x, 32)
+    dense = Dense(units=7 * 7 * 42, activation='relu',
+                  input_shape=(constants.domain, ))(hid_decoded)
+    reshape = Reshape((7, 7, 42))(dense)
+    # x = useBlockDecoder(reshape, 128)
+    x = useBlockDecoder(reshape, 56)
+    x = useBlockDecoder(x, 28)
     drop_2 = Dropout(0.4)(x)
     output_img = Conv2D(constants.colors, kernel_size=3, strides=1,
                         activation='sigmoid', padding='same', name='autoencoder')(drop_2)
@@ -205,7 +210,7 @@ def get_decoder(encoded):
 def get_classifier(encoded):
     dense_1 = Dense(constants.domain*2, activation='relu')(encoded)
     drop = Dropout(0.4)(dense_1)
-    classification = Dense(10, activation='softmax',
+    classification = Dense(LABELS, activation='softmax',
                            name='classification')(drop)
 
     return classification
@@ -255,7 +260,8 @@ def train_networks(training_percentage, filename, experiment):
 
         model.summary()
 
-        es_cb = tf.keras.callbacks.EarlyStopping(monitor='autoencoder_accuracy', patience=2, verbose=1, mode='auto')
+        es_cb = tf.keras.callbacks.EarlyStopping(
+            monitor='autoencoder_accuracy', patience=2, verbose=1, mode='auto')
         history = model.fit(training_data,
                             (training_labels, training_data),
                             batch_size=BATCH_SIZE,
@@ -263,8 +269,8 @@ def train_networks(training_percentage, filename, experiment):
                             validation_data=(testing_data,
                                              {'classification': testing_labels, 'autoencoder': testing_data}),
                             verbose=2,
-                            callbacks=[es_cb])
-                            # shuffle=True)
+                            callbacks=[es_cb],
+                            shuffle=True)
 
         histories.append(history)
         model.save(constants.model_filename(filename, n))
@@ -316,8 +322,8 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
     to the images. It may introduce occlusions.
     """
     (data, labels) = get_data(experiment, occlusion, bars_type)
-    # data - imagenes - (60000, 32, 32, 3)
-    # labels - txt - (60000,)
+    # data - imagenes - (240000, 28, 28)
+    # labels - txt - (240000,)
 
     total = len(data)
     step = int(total/constants.training_stages)
