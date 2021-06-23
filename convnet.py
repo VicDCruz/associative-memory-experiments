@@ -34,7 +34,7 @@ img_columns = 28
 
 LABELS = 27
 
-BATCH_SIZE = 128
+BATCH_SIZE = 100
 
 TOP_SIDE = 0
 BOTTOM_SIDE = 1
