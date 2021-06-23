@@ -32,7 +32,7 @@ import constants
 img_rows = 28
 img_columns = 28
 
-LABELS = 27
+LABELS = constants.all_labels
 
 BATCH_SIZE = 100
 
