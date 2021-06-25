@@ -55,3 +55,6 @@ limitations under the License.
 - [Variational autoenconder - VAE (2.)](https://olaralex.com/variational-auto-encoder-with-cifar-10-2/)
 - [How to Develop a CNN From Scratch for CIFAR-10 Photo Classification](https://machinelearningmastery.com/how-to-develop-a-cnn-from-scratch-for-cifar-10-photo-classification/)
 - [Autoencoder de TensorFlow: Ejemplo de aprendizaje profundo](https://guru99.es/autoencoder-deep-learning/)
+- [EMNIST](https://pypi.org/project/emnist/)
+- [Mnist and Emnist Handwriting Recognition Using Keras and Tensorflow](https://tracemycode.com/handwriting-recognition-keras-tensorflow/)
+- [Tutorial: Alphabet Recognition Through Gestures — A Deep Learning and OpenCV Application](https://towardsdatascience.com/tutorial-alphabet-recognition-deeplearning-opencv-97e697b8fb86)
