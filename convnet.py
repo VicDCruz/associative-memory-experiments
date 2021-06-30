@@ -350,7 +350,6 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
             training_labels = other_labels[:trdata]
             filling_data = other_data[trdata:]
             filling_labels = other_labels[trdata:]
-            print('Path 1')
         else:
             testing_data = np.concatenate((data[0:j], data[i:total]), axis=0)
             testing_labels = np.concatenate(
@@ -359,7 +358,6 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
             training_labels = labels[j:j+trdata]
             filling_data = data[j+trdata:i]
             filling_labels = labels[j+trdata:i]
-            print('Path 2')
 
         print('Testing data:', np.shape(testing_data))
         # Recreate the exact same model, including its weights and the optimizer
@@ -370,41 +368,42 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
         classifier = Model(model.input, model.output[0])
         no_hot = to_categorical(testing_labels)
         print('No hot:', np.shape(no_hot))
-        classifier.compile(
-            optimizer='adam', loss='categorical_crossentropy', metrics='accuracy')
-        history = classifier.evaluate(
-            testing_data, no_hot, batch_size=BATCH_SIZE, verbose=1, return_dict=True)
-        print(history)
-        histories.append(history)
-        model = Model(classifier.input, classifier.layers[-4].output)
-        model.summary()
+        if np.shape(no_hot)[1] > 14:
+            classifier.compile(
+                optimizer='adam', loss='categorical_crossentropy', metrics='accuracy')
+            history = classifier.evaluate(
+                testing_data, no_hot, batch_size=BATCH_SIZE, verbose=1, return_dict=True)
+            print(history)
+            histories.append(history)
+            model = Model(classifier.input, classifier.layers[-4].output)
+            model.summary()
 
-        training_features = model.predict(training_data)
-        if len(filling_data) > 0:
-            filling_features = model.predict(filling_data)
-        else:
-            r, c = training_features.shape
-            filling_features = np.zeros((0, c))
-        testing_features = model.predict(testing_data)
+            training_features = model.predict(training_data)
+            if len(filling_data) > 0:
+                filling_features = model.predict(filling_data)
+            else:
+                r, c = training_features.shape
+                filling_features = np.zeros((0, c))
+            testing_features = model.predict(testing_data)
 
-        dict = {
-            constants.training_suffix: (training_data, training_features, training_labels),
-            constants.filling_suffix: (filling_data, filling_features, filling_labels),
-            constants.testing_suffix: (
-                testing_data, testing_features, testing_labels)
-        }
+            dict = {
+                constants.training_suffix: (training_data, training_features, training_labels),
+                constants.filling_suffix: (filling_data, filling_features, filling_labels),
+                constants.testing_suffix: (
+                    testing_data, testing_features, testing_labels)
+            }
 
-        for suffix in dict:
-            data_fn = constants.data_filename(data_prefix+suffix, n)
-            features_fn = constants.data_filename(features_prefix+suffix, n)
-            labels_fn = constants.data_filename(labels_prefix+suffix, n)
+            for suffix in dict:
+                data_fn = constants.data_filename(data_prefix+suffix, n)
+                features_fn = constants.data_filename(features_prefix+suffix, n)
+                labels_fn = constants.data_filename(labels_prefix+suffix, n)
 
-            d, f, l = dict[suffix]
-            np.save(data_fn, d)
-            np.save(features_fn, f)
-            np.save(labels_fn, l)
+                d, f, l = dict[suffix]
+                np.save(data_fn, d)
+                np.save(features_fn, f)
+                np.save(labels_fn, l)
 
-        n += 1
+            n += 1
 
     return histories
 
