@@ -368,7 +368,7 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
         classifier = Model(model.input, model.output[0])
         no_hot = to_categorical(testing_labels)
         print('No hot:', np.shape(no_hot))
-        if np.shape(no_hot)[1] > 14:
+        if np.shape(no_hot)[1] == constants.n_labels:
             classifier.compile(
                 optimizer='adam', loss='categorical_crossentropy', metrics='accuracy')
             history = classifier.evaluate(
