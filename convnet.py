@@ -350,6 +350,7 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
             training_labels = other_labels[:trdata]
             filling_data = other_data[trdata:]
             filling_labels = other_labels[trdata:]
+            print('Path 1')
         else:
             testing_data = np.concatenate((data[0:j], data[i:total]), axis=0)
             testing_labels = np.concatenate(
@@ -358,6 +359,7 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
             training_labels = labels[j:j+trdata]
             filling_data = data[j+trdata:i]
             filling_labels = labels[j+trdata:i]
+            print('Path 2')
 
         print('Testing data:', np.shape(testing_data))
         # Recreate the exact same model, including its weights and the optimizer
