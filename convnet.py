@@ -359,7 +359,7 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
             filling_data = data[j+trdata:i]
             filling_labels = labels[j+trdata:i]
 
-        print(np.shape(testing_data), np.shape(no_hot))
+        print('Testing data:', np.shape(testing_data))
         # Recreate the exact same model, including its weights and the optimizer
         model = tf.keras.models.load_model(
             constants.model_filename(model_prefix, n))
@@ -367,6 +367,7 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
         # Drop the autoencoder and the last layers of the full connected neural network part.
         classifier = Model(model.input, model.output[0])
         no_hot = to_categorical(testing_labels)
+        print('No hot:', np.shape(no_hot))
         classifier.compile(
             optimizer='adam', loss='categorical_crossentropy', metrics='accuracy')
         history = classifier.evaluate(
