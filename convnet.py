@@ -339,6 +339,9 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
     for i in range(0, total, step):
         j = (i + tedata) % total
 
+        print(data.shape())
+        exit()
+
         if j > i:
             testing_data = data[i:j]
             testing_labels = labels[i:j]
