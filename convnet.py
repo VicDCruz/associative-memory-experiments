@@ -339,8 +339,6 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
     for i in range(0, total, step):
         j = (i + tedata) % total
 
-        print(np.shape(data))
-        exit()
 
         if j > i:
             testing_data = data[i:j]
@@ -361,6 +359,8 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
             filling_data = data[j+trdata:i]
             filling_labels = labels[j+trdata:i]
 
+        print(np.shape(data))
+        exit()
         # Recreate the exact same model, including its weights and the optimizer
         model = tf.keras.models.load_model(
             constants.model_filename(model_prefix, n))
