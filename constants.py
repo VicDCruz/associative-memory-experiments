@@ -179,7 +179,7 @@ filling_suffix = '-filling'
 testing_suffix = '-testing'
 memory_suffix = '-memories'
 
-training_stages = 26
+training_stages = 10
 model_epochs = 10
 
 am_testing_percent = (100 / training_stages) / 100
@@ -189,7 +189,7 @@ am_filling_percent = 0.33   # 0.67 + 0.33 = 1.0
 domain = 128
 
 n_jobs = 4
-n_labels = 26
+n_labels = 27
 labels_per_memory = [0, 1, 2]
 
 all_labels = list(range(n_labels))
