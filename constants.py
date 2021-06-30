@@ -179,7 +179,7 @@ filling_suffix = '-filling'
 testing_suffix = '-testing'
 memory_suffix = '-memories'
 
-training_stages = 10
+training_stages = 27
 model_epochs = 10
 
 am_testing_percent = (100 / training_stages) / 100
