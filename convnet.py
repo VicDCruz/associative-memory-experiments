@@ -262,6 +262,7 @@ def train_networks(training_percentage, filename, experiment):
 
         es_cb = tf.keras.callbacks.EarlyStopping(
             monitor='autoencoder_accuracy', patience=2, verbose=1, mode='auto')
+        print(np.shape(training_data), np.shape(training_labels))
         history = model.fit(training_data,
                             (training_labels, training_data),
                             batch_size=BATCH_SIZE,
