@@ -126,9 +126,6 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
         (145600, img_columns, img_rows, constants.colors))
     all_data = all_data.astype('float32') / 255
 
-    print(np.unique(all_labels))
-    exit()
-
     if one_hot:
         # Changes labels to binary rows. Each label correspond to a column, and only
         # the column for the corresponding label is set to one.
