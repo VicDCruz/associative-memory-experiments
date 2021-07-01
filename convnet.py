@@ -120,8 +120,6 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
     all_data = np.concatenate((train_images, test_images), axis=0)
     all_labels = np.concatenate((train_labels, test_labels), axis=0)
     all_labels = all_labels - 1 # Change to 0-base index
-    print(np.unique(all_labels))
-    exit()
 
     all_data = add_noise(all_data, experiment, occlusion, bars_type)
 
