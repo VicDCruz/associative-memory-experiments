@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from PIL import Image
 import sys
 import numpy as np
 import tensorflow as tf
@@ -25,7 +24,8 @@ from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Flatte
 from tensorflow.keras.utils import to_categorical
 from joblib import Parallel, delayed
 from tensorflow.keras import backend as K
-# import png
+# from PIL import Image
+import png
 
 import constants
 
@@ -288,14 +288,14 @@ def store_images(original, produced, directory, stage, idx, label):
 
     pixels = original.reshape(img_columns, img_rows, constants.colors) * 255
     pixels = pixels.round().astype(np.uint8)
-    img = Image.fromarray(pixels, 'RGB')
-    img.save(original_filename)
-    # png.from_array(pixels, 'L;8').save(original_filename)
+    # img = Image.fromarray(pixels, 'RGB')
+    # img.save(original_filename)
+    png.from_array(pixels, 'L;8').save(original_filename)
     pixels = produced.reshape(img_columns, img_rows, constants.colors) * 255
     pixels = pixels.round().astype(np.uint8)
-    img = Image.fromarray(pixels, 'RGB')
-    img.save(produced_filename)
-    # png.from_array(pixels, 'L;8').save(produced_filename)
+    # img = Image.fromarray(pixels, 'RGB')
+    # img.save(produced_filename)
+    png.from_array(pixels, 'L;8').save(produced_filename)
 
 
 def store_memories(labels, produced, features, directory, stage, msize):
@@ -309,9 +309,9 @@ def store_memories(labels, produced, features, directory, stage, msize):
         pixels = produced.reshape(
             img_columns, img_rows, constants.colors) * 255
     pixels = pixels.round().astype(np.uint8)
-    img = Image.fromarray(pixels, 'RGB')
-    img.save(produced_filename)
-    # png.from_array(pixels, 'L;8').save(produced_filename)
+    # img = Image.fromarray(pixels, 'RGB')
+    # img.save(produced_filename)
+    png.from_array(pixels, 'L;8').save(produced_filename)
 
 
 def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
