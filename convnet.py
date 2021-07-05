@@ -34,14 +34,16 @@ img_columns = 28
 
 LABELS = constants.n_labels
 
-BATCH_SIZE = 100
-
 TOP_SIDE = 0
 BOTTOM_SIDE = 1
 LEFT_SIDE = 2
 RIGHT_SIDE = 3
 VERTICAL_BARS = 4
 HORIZONTAL_BARS = 5
+
+truly_training_percentage = 0.80
+epochs = 30
+batch_size = 100
 
 
 def print_error(*s):
@@ -219,43 +221,52 @@ def get_classifier(encoded):
 
 def train_networks(training_percentage, filename, experiment):
 
-    EPOCHS = constants.model_epochs
     stages = constants.training_stages
 
     (data, labels) = get_data(experiment, one_hot=True)
 
     total = len(data)
-    step = int(total/stages)
+    step = total/stages
 
-    # Amount of testing data
-    atd = total - int(total*training_percentage)
+    # Amount of training data, from which a percentage is used for
+    # validation.
+    training_size = int(total*training_percentage)
 
     n = 0
     histories = []
-    for i in range(0, total, step):
-        j = (i + atd) % total
+    for k in range(stages):
+        i = k*step
+        j = int(i + training_size) % total
+        i = int(i)
 
         if j > i:
-            testing_data = data[i:j]
-            testing_labels = labels[i:j]
-
-            training_data = np.concatenate((data[0:i], data[j:total]), axis=0)
-            training_labels = np.concatenate(
+            training_data = data[i:j]
+            training_labels = labels[i:j]
+            testing_data = np.concatenate((data[0:i], data[j:total]), axis=0)
+            testing_labels = np.concatenate(
                 (labels[0:i], labels[j:total]), axis=0)
         else:
-            testing_data = np.concatenate((data[i:total], data[0:j]), axis=0)
-            testing_labels = np.concatenate(
+            training_data = np.concatenate((data[i:total], data[0:j]), axis=0)
+            training_labels = np.concatenate(
                 (labels[i:total], labels[0:j]), axis=0)
-            training_data = data[j:i]
-            training_labels = labels[j:i]
+            testing_data = data[j:i]
+            testing_labels = labels[j:i]
 
-        input_img = Input(shape=(img_columns, img_rows, constants.colors))
+        truly_training = int(training_size*truly_training_percentage)
+
+        validation_data = training_data[truly_training:]
+        validation_labels = training_labels[truly_training:]
+        training_data = training_data[:truly_training]
+        training_labels = training_labels[:truly_training]
+
+        input_img = Input(shape=(img_columns, img_rows, 1))
         encoded = get_encoder(input_img)
         classified = get_classifier(encoded)
         decoded = get_decoder(encoded)
+
         model = Model(inputs=input_img, outputs=[classified, decoded])
 
-        model.compile(loss=['categorical_crossentropy', 'binary_crossentropy'],
+        model.compile(loss=['categorical_crossentropy', 'mean_squared_error'],
                       optimizer='adam',
                       metrics='accuracy')
 
@@ -265,15 +276,19 @@ def train_networks(training_percentage, filename, experiment):
             monitor='autoencoder_accuracy', patience=2, verbose=1, mode='auto')
         history = model.fit(training_data,
                             (training_labels, training_data),
-                            batch_size=BATCH_SIZE,
-                            epochs=EPOCHS,
-                            validation_data=(testing_data,
-                                             {'classification': testing_labels, 'autoencoder': testing_data}),
+                            batch_size=batch_size,
+                            epochs=epochs,
+                            validation_data=(validation_data,
+                                             {'classification': validation_labels, 'autoencoder': validation_data}),
                             verbose=2,
                             callbacks=[es_cb],
                             shuffle=True)
 
         histories.append(history)
+        history = model.evaluate(testing_data,
+                                 (testing_labels, testing_data), return_dict=True)
+        histories.append(history)
+
         model.save(constants.model_filename(filename, n))
         n += 1
 
@@ -340,7 +355,6 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
     for i in range(0, total, step):
         j = (i + tedata) % total
 
-
         if j > i:
             testing_data = data[i:j]
             testing_labels = labels[i:j]
@@ -370,7 +384,7 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
         classifier.compile(
             optimizer='adam', loss='categorical_crossentropy', metrics='accuracy')
         history = classifier.evaluate(
-            testing_data, no_hot, batch_size=BATCH_SIZE, verbose=1, return_dict=True)
+            testing_data, no_hot, batch_size=batch_size, verbose=1, return_dict=True)
         print(history)
         histories.append(history)
         model = Model(classifier.input, classifier.layers[-4].output)
