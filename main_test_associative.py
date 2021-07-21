@@ -108,7 +108,7 @@ def plot_size_graph(response_size, size_stdev, action=None, tolerance=0):
     plt.errorbar(x, response_size, fmt='g-D', yerr=size_stdev,
                  label=_('Average number of responses'))
     plt.xlim(0, xmax)
-    plt.ylim(0, ymax)
+    # plt.ylim(0, ymax)
     plt.xticks(x, constants.memory_sizes)
     plt.yticks(np.arange(0, ymax+1, 1), range(constants.n_labels+1))
 
