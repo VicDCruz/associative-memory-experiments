@@ -185,7 +185,11 @@ def plot_features_graph(domain, means, stdevs, experiment, occlusion=None, bars_
     main_step = 100.0 / domain
     xrange = np.arange(0, 100, main_step)
     fmts = ['r-h', 'b-*', 'g-s', 'y-x', 'm-d',
-            'c-h', 'r-*', 'b--s', 'g--x', 'y--d']
+            'c-h', 'r-*', 'b--s', 'g--x', 'y--d',
+            'r-h', 'b-*', 'g-s', 'y-x', 'm-d',
+            'c-h', 'r-*', 'b--s', 'g--x', 'y--d',
+            'r-h', 'b-*', 'g-s', 'y-x', 'm-d',
+            'c-h']
 
     for i in constants.all_labels:
         plt.clf()
