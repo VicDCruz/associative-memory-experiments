@@ -403,6 +403,8 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
     (data, labels) = get_data(experiment, occlusion, bars_type)
 
     total = len(data)
+    print(total)
+    exit()
     step = int(total/constants.training_stages)
 
     training_size = int(total*training_percentage)
@@ -429,7 +431,6 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
         testing_labels = get_data_in_range(labels, k, l)
 
         # Recreate the exact same model, including its weights and the optimizer
-        print(constants.model_filename(model_prefix, n))
         model = tf.keras.models.load_model(
             constants.model_filename(model_prefix, n))
 
