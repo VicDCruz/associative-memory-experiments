@@ -22,6 +22,7 @@ from tensorflow.keras import layers
 from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Flatten, Dense, \
     Activation, Reshape, Conv2DTranspose, BatchNormalization, LayerNormalization
 from tensorflow.keras.utils import to_categorical
+from tensorflow.keras.callbacks import Callback
 from joblib import Parallel, delayed
 from tensorflow.keras import backend as K
 # from PIL import Image
