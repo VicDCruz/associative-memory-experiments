@@ -432,7 +432,6 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
         # Recreate the exact same model, including its weights and the optimizer
         model = tf.keras.models.load_model(
             constants.model_filename(model_prefix, folder))
-        folder += 1
 
         # Drop the autoencoder and the last layers of the full connected neural network part.
         classifier = Model(model.input, model.output[0])
@@ -462,14 +461,16 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
         }
 
         for suffix in dict:
-            data_fn = constants.data_filename(data_prefix+suffix, n)
-            features_fn = constants.data_filename(features_prefix+suffix, n)
-            labels_fn = constants.data_filename(labels_prefix+suffix, n)
+            data_fn = constants.data_filename(data_prefix+suffix, folder)
+            features_fn = constants.data_filename(features_prefix+suffix, folder)
+            labels_fn = constants.data_filename(labels_prefix+suffix, folder)
 
             d, f, l = dict[suffix]
             np.save(data_fn, d)
             np.save(features_fn, f)
             np.save(labels_fn, l)
+
+        folder += 1
 
     return histories
 
