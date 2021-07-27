@@ -189,7 +189,11 @@ def plot_features_graph(domain, means, stdevs, experiment, occlusion=None, bars_
             'r-h', 'b-*', 'g-s', 'y-x', 'm-d',
             'c-h', 'r-*', 'b--s', 'g--x', 'y--d',
             'r-h', 'b-*', 'g-s', 'y-x', 'm-d',
-            'c-h']
+            'c-h', 'r-*', 'b--s', 'g--x', 'y--d',
+            'r-h', 'b-*', 'g-s', 'y-x', 'm-d',
+            'c-h', 'r-*', 'b--s', 'g--x', 'y--d',
+            'r-h', 'b-*', 'g-s', 'y-x', 'm-d',
+            'c-h', 'r-*']
 
     for i in constants.all_labels:
         plt.clf()
