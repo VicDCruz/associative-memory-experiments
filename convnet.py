@@ -113,15 +113,35 @@ def add_noise(data, experiment, occlusion=0, bars_type=None):
 
 def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
 
-   # Load EMNIST data, as part of TensorFlow.
+    # Load EMNIST data, as part of TensorFlow.
     (train_images, train_labels), (test_images, test_labels) = emnist.extract_training_samples(
-        'letters'), emnist.extract_test_samples('letters')
-    # train_labels = train_labels.reshape(-1, )
-    # test_labels = test_labels.reshape(-1, )
+        'balanced'), emnist.extract_test_samples('balanced')
+
+    # (train_images, train_labels), (test_images, test_labels) = emnist.extract_training_samples(
+    #     'letters'), emnist.extract_test_samples('letters')
+    #     # train_labels = train_labels.reshape(-1, )
+    #     # test_labels = test_labels.reshape(-1, )
 
     all_data = np.concatenate((train_images, test_images), axis=0)
     all_labels = np.concatenate((train_labels, test_labels), axis=0)
-    all_labels = all_labels - 1 # Change to 0-base index
+
+    # all_labels = all_labels - 1  # Change to 0-base index for letters
+
+    # Para tabla 1 y el experimento 2
+    # for i, l in enumerate(all_labels):
+    #     all_labels[i] = {
+    #         36: 10,
+    #         37: 11,
+    #         38: 13,
+    #         39: 14,
+    #         40: 15,
+    #         41: 16,
+    #         42: 17,
+    #         43: 23,
+    #         44: 26,
+    #         45: 27,
+    #         46: 29
+    #     }.get(l, l)
 
     all_data = add_noise(all_data, experiment, occlusion, bars_type)
 
