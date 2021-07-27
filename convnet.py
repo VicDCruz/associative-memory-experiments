@@ -278,7 +278,7 @@ class EarlyStoppingAtLossCrossing(Callback):
         accuracy = logs.get('accuracy')
         val_accuracy = logs.get('val_accuracy')
 
-        if (epoch < self.start) or ((val_loss < self.prev_loss) and (val_loss < loss) and (accuracy < val_accuracy)):
+        if (float(epoch or 0) < self.start) or ((float(val_loss or 0) < self.prev_loss) and (float(val_loss or 0) < float(loss or 0)) and (float(accuracy or 0) < float(val_accuracy or 0))):
             self.wait = 0
             self.prev_loss = val_loss
             self.best_weights = self.model.get_weights()
