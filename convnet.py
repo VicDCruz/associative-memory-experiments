@@ -44,6 +44,7 @@ HORIZONTAL_BARS = 5
 truly_training_percentage = 0.80
 epochs = 30
 batch_size = 100
+patience = 5
 
 
 def print_error(*s):
@@ -181,6 +182,14 @@ def useBlockDecoder(input, filters, repeat=1, kernelSize=3):
     return x
 
 
+def get_data_in_range(data, i, j):
+    total = len(data)
+    if j >= i:
+        return data[i:j]
+    else:
+        return np.concatenate((data[i:total], data[0:j]), axis=0)
+
+
 def get_encoder(input_img):
     x = Conv2D(32, kernel_size=3, activation='relu', padding='same',
                input_shape=(img_columns, img_rows, constants.colors))(input_img)
@@ -239,6 +248,52 @@ def get_classifier(encoded):
     return classification
 
 
+class EarlyStoppingAtLossCrossing(Callback):
+    """ Stop training when the loss gets lower than val_loss.
+        Arguments:
+            patience: Number of epochs to wait after condition has been hit.
+            After this number of no reversal, training stops.
+            It starts working after 10% of epochs have taken place.
+    """
+
+    def __init__(self, patience=0):
+        super(EarlyStoppingAtLossCrossing, self).__init__()
+        self.patience = patience
+        self.prev_loss = float('inf')
+        # best_weights to store the weights at which the loss crossing occurs.
+        self.best_weights = None
+        self.start = max(epochs // 20, 3)
+        self.wait = 0
+
+    def on_train_begin(self, logs=None):
+        # The number of epoch it has waited since loss crossed val_loss.
+        self.wait = 0
+        # The epoch the training stops at.
+        self.stopped_epoch = 0
+
+    def on_epoch_end(self, epoch, logs=None):
+        loss = logs.get('loss')
+        val_loss = logs.get('val_loss')
+        accuracy = logs.get('accuracy')
+        val_accuracy = logs.get('val_accuracy')
+
+        if (epoch < self.start) or ((val_loss < self.prev_loss) and (val_loss < loss) and (accuracy < val_accuracy)):
+            self.wait = 0
+            self.prev_loss = val_loss
+            self.best_weights = self.model.get_weights()
+        else:
+            self.wait += 1
+            if self.wait >= self.patience:
+                self.stopped_epoch = epoch
+                self.model.stop_training = True
+                print("Restoring model weights from the end of the best epoch.")
+                self.model.set_weights(self.best_weights)
+
+    def on_train_end(self, logs=None):
+        if self.stopped_epoch > 0:
+            print("Epoch %05d: early stopping" % (self.stopped_epoch + 1))
+
+
 def train_networks(training_percentage, filename, experiment):
 
     stages = constants.training_stages
@@ -252,25 +307,15 @@ def train_networks(training_percentage, filename, experiment):
     # validation.
     training_size = int(total*training_percentage)
 
-    n = 0
     histories = []
-    for k in range(stages):
-        i = k*step
-        j = int(i + training_size) % total
-        i = int(i)
+    for n in range(stages):
+        i = int(n*step)
+        j = (i + training_size) % total
 
-        if j > i:
-            training_data = data[i:j]
-            training_labels = labels[i:j]
-            testing_data = np.concatenate((data[0:i], data[j:total]), axis=0)
-            testing_labels = np.concatenate(
-                (labels[0:i], labels[j:total]), axis=0)
-        else:
-            training_data = np.concatenate((data[i:total], data[0:j]), axis=0)
-            training_labels = np.concatenate(
-                (labels[i:total], labels[0:j]), axis=0)
-            testing_data = data[j:i]
-            testing_labels = labels[j:i]
+        training_data = get_data_in_range(data, i, j)
+        training_labels = get_data_in_range(labels, i, j)
+        testing_data = get_data_in_range(data, j, i)
+        testing_labels = get_data_in_range(labels, j, i)
 
         truly_training = int(training_size*truly_training_percentage)
 
@@ -292,16 +337,14 @@ def train_networks(training_percentage, filename, experiment):
 
         model.summary()
 
-        es_cb = tf.keras.callbacks.EarlyStopping(
-            monitor='autoencoder_accuracy', patience=2, verbose=1, mode='auto')
         history = model.fit(training_data,
                             (training_labels, training_data),
                             batch_size=batch_size,
                             epochs=epochs,
                             validation_data=(validation_data,
                                              {'classification': validation_labels, 'autoencoder': validation_data}),
+                            callbacks=[EarlyStoppingAtLossCrossing(patience)],
                             verbose=2,
-                            callbacks=[es_cb],
                             shuffle=True)
 
         histories.append(history)
@@ -310,7 +353,6 @@ def train_networks(training_percentage, filename, experiment):
         histories.append(history)
 
         model.save(constants.model_filename(filename, n))
-        n += 1
 
     return histories
 
@@ -358,41 +400,32 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
     to the images. It may introduce occlusions.
     """
     (data, labels) = get_data(experiment, occlusion, bars_type)
-    # data - imagenes - (131600, 28, 28)
-    # labels - txt - (131600,)
 
     total = len(data)
     step = int(total/constants.training_stages)
 
-    # Amount of data used for training the networks
-    trdata = int(total*training_percentage)
+    training_size = int(total*training_percentage)
+    filling_size = int(total*am_filling_percentage)
+    testing_size = total - training_size - filling_size
 
     # Amount of data used for testing memories
     tedata = step
 
-    n = 0
     histories = []
-    for i in range(0, total, step):
-        j = (i + tedata) % total
+    for n in range(0, total, step):
+        i = int(n*step)
+        j = (i+training_size) % total
 
-        if j > i:
-            testing_data = data[i:j]
-            testing_labels = labels[i:j]
-            other_data = np.concatenate((data[0:i], data[j:total]), axis=0)
-            other_labels = np.concatenate(
-                (labels[0:i], labels[j:total]), axis=0)
-            training_data = other_data[:trdata]
-            training_labels = other_labels[:trdata]
-            filling_data = other_data[trdata:]
-            filling_labels = other_labels[trdata:]
-        else:
-            testing_data = np.concatenate((data[0:j], data[i:total]), axis=0)
-            testing_labels = np.concatenate(
-                (labels[0:j], labels[i:total]), axis=0)
-            training_data = data[j:j+trdata]
-            training_labels = labels[j:j+trdata]
-            filling_data = data[j+trdata:i]
-            filling_labels = labels[j+trdata:i]
+        training_data = get_data_in_range(data, i, j)
+        training_labels = get_data_in_range(labels, i, j)
+
+        k = (j+filling_size) % total
+        filling_data = get_data_in_range(data, j, k)
+        filling_labels = get_data_in_range(labels, j, k)
+
+        l = (k+testing_size) % total
+        testing_data = get_data_in_range(data, k, l)
+        testing_labels = get_data_in_range(labels, k, l)
 
         # Recreate the exact same model, including its weights and the optimizer
         model = tf.keras.models.load_model(
@@ -434,8 +467,6 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
             np.save(data_fn, d)
             np.save(features_fn, f)
             np.save(labels_fn, l)
-
-        n += 1
 
     return histories
 
