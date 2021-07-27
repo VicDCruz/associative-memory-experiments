@@ -403,9 +403,10 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
     (data, labels) = get_data(experiment, occlusion, bars_type)
 
     total = len(data)
-    print(total)
-    exit()
     step = int(total/constants.training_stages)
+    print(total)
+    print(step)
+    exit()
 
     training_size = int(total*training_percentage)
     filling_size = int(total*am_filling_percentage)
