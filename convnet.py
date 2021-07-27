@@ -404,9 +404,6 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
 
     total = len(data)
     step = int(total/constants.training_stages)
-    print(total)
-    print(step)
-    exit()
 
     training_size = int(total*training_percentage)
     filling_size = int(total*am_filling_percentage)
@@ -415,6 +412,7 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
     # Amount of data used for testing memories
     tedata = step
 
+    folder = 0
     histories = []
     for n in range(0, total, step):
         i = int(n*step)
@@ -433,7 +431,8 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
 
         # Recreate the exact same model, including its weights and the optimizer
         model = tf.keras.models.load_model(
-            constants.model_filename(model_prefix, n))
+            constants.model_filename(model_prefix, folder))
+        folder += 1
 
         # Drop the autoencoder and the last layers of the full connected neural network part.
         classifier = Model(model.input, model.output[0])
