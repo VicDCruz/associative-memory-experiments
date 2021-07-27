@@ -409,12 +409,8 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
     filling_size = int(total*am_filling_percentage)
     testing_size = total - training_size - filling_size
 
-    # Amount of data used for testing memories
-    tedata = step
-
-    folder = 0
     histories = []
-    for n in range(0, total, step):
+    for n in range(stages):
         i = int(n*step)
         j = (i+training_size) % total
 
@@ -431,7 +427,7 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
 
         # Recreate the exact same model, including its weights and the optimizer
         model = tf.keras.models.load_model(
-            constants.model_filename(model_prefix, folder))
+            constants.model_filename(model_prefix, n))
 
         # Drop the autoencoder and the last layers of the full connected neural network part.
         classifier = Model(model.input, model.output[0])
@@ -461,16 +457,14 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
         }
 
         for suffix in dict:
-            data_fn = constants.data_filename(data_prefix+suffix, folder)
-            features_fn = constants.data_filename(features_prefix+suffix, folder)
-            labels_fn = constants.data_filename(labels_prefix+suffix, folder)
+            data_fn = constants.data_filename(data_prefix+suffix, n)
+            features_fn = constants.data_filename(features_prefix+suffix, n)
+            labels_fn = constants.data_filename(labels_prefix+suffix, n)
 
             d, f, l = dict[suffix]
             np.save(data_fn, d)
             np.save(features_fn, f)
             np.save(labels_fn, l)
-
-        folder += 1
 
     return histories
 
