@@ -275,10 +275,10 @@ class EarlyStoppingAtLossCrossing(Callback):
     def on_epoch_end(self, epoch, logs=None):
         loss = logs.get('loss')
         val_loss = logs.get('val_loss')
-        accuracy = logs.get('accuracy')
-        val_accuracy = logs.get('val_accuracy')
+        classification_accuracy = logs.get('classification_accuracy')
+        val_classification_accuracy = logs.get('val_classification_accuracy')    
 
-        if (float(epoch or 0) < self.start) or ((float(val_loss or 0) < self.prev_loss) and (float(val_loss or 0) < float(loss or 0)) and (float(accuracy or 0) < float(val_accuracy or 0))):
+        if (epoch < self.start) or ((val_loss < self.prev_loss) and (val_loss < loss) and (classification_accuracy < val_classification_accuracy)):
             self.wait = 0
             self.prev_loss = val_loss
             self.best_weights = self.model.get_weights()
@@ -429,6 +429,7 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
         testing_labels = get_data_in_range(labels, k, l)
 
         # Recreate the exact same model, including its weights and the optimizer
+        print(constants.model_filename(model_prefix, n))
         model = tf.keras.models.load_model(
             constants.model_filename(model_prefix, n))
 
