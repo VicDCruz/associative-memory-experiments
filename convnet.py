@@ -146,7 +146,7 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
     all_data = add_noise(all_data, experiment, occlusion, bars_type)
 
     all_data = all_data.reshape(
-        (145600, img_columns, img_rows, constants.colors))
+        (131600, img_columns, img_rows, constants.colors))
     all_data = all_data.astype('float32') / 255
 
     if one_hot:
@@ -358,8 +358,8 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
     to the images. It may introduce occlusions.
     """
     (data, labels) = get_data(experiment, occlusion, bars_type)
-    # data - imagenes - (145600, 28, 28)
-    # labels - txt - (145600,)
+    # data - imagenes - (131600, 28, 28)
+    # labels - txt - (131600,)
 
     total = len(data)
     step = int(total/constants.training_stages)
