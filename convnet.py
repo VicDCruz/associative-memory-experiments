@@ -125,7 +125,7 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
     all_data = np.concatenate((train_images, test_images), axis=0)
     all_labels = np.concatenate((train_labels, test_labels), axis=0)
 
-    all_labels = all_labels - 1  # Change to 0-base index for letters
+    # all_labels = all_labels - 1  # Change to 0-base index for letters
 
     # Para tabla 1 y el experimento 2
     # for i, l in enumerate(all_labels):
