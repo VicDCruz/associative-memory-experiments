@@ -400,6 +400,8 @@ def obtain_features(model_prefix, features_prefix, labels_prefix, data_prefix,
     Uses the previously trained neural networks for generating the features corresponding
     to the images. It may introduce occlusions.
     """
+    stages = constants.training_stages
+
     (data, labels) = get_data(experiment, occlusion, bars_type)
 
     total = len(data)
