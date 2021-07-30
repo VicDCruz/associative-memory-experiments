@@ -198,7 +198,7 @@ def plot_features_graph(domain, means, stdevs, experiment, occlusion=None, bars_
 
     main_step = 100.0 / domain
     xrange = np.arange(0, 100, main_step)
-    fmt = get_formats(constants.n_labels)
+    fmts = get_formats(constants.n_labels)
 
     for i in constants.all_labels:
         plt.clf()
