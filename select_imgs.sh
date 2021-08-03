@@ -20,26 +20,43 @@ imag_dir="${runs_dir}/images"
 test_dir="${imag_dir}/test"
 mems_dir="${imag_dir}/memories"
 
-if [ "$#" -ne 2 ]; then
-    echo "Usage: $0 exp_id stage-id.txt"
-    echo "Where exp_no is the experiment identifier and stage-id.txt is a"
-    echo "text file (must have .txt extension) with pairs of stage and id"
-    exit 1
-fi
+#if [ "$#" -ne 2 ]; then
+#    echo "Usage: $0 exp_id stage-id.txt"
+#    echo "Where exp_no is the experiment identifier and stage-id.txt is a"
+#    echo "text file (must have .txt extension) with pairs of stage and id"
+#    exit 1
+#fi
 
+##
+## Setting variables
+##
 exp_no=$(printf "%03d" $1)
 test_dir="${test_dir}-$exp_no"
 mems_dir="${mems_dir}-$exp_no"
 imag_dir="${imag_dir}/$exp_no"
-
-if [ ! -d "$test_dir" ] || [ ! -d "$mems_dir" ]; then
-    echo "Directories for $exp_no do not exist!"
-    exit 2
-fi
-
-
 random_dir=`basename $2 .txt`
 random_dir=${imag_dir}/${random_dir}
+occ_bar=$3
+tol=$4
+##
+##
+##
+
+if [ ! -z "$occ_bar" ]; then
+   mems_dir="${mems_dir}-$occ_bar"
+   test_dir="${test_dir}-$occ_bar"
+   random_dir="${random_dir}-$occ_bar"
+fi
+
+if [ ! -z "$tol" ]; then
+   mems_dir="${mems_dir}-$tol"
+   random_dir="${random_dir}-$tol"
+fi
+   
+if [ ! -d "$test_dir" ] || [ ! -d "$mems_dir" ]; then
+    echo "Directory for $test_dir or $mems_dir do not exist!"
+    exit 2
+fi
 
 if [ ! -d ${random_dir}  ]; then
     mkdir -p ${random_dir}
@@ -54,14 +71,20 @@ for i in `cat $pair_fn`; do
     ts_dir="${test_dir}/stage_${stage}"
     ms_dir="${mems_dir}/stage_${stage}"
     dig_fn=$id
-    join_imgs="${random_dir}/${dig_fn}-join.png"
+
+    IFS='_' read class number <<< "${dig_fn}"
+    if [ $class -ge 0 ] && [ $class -le 9 ]; then
+	join_imgs="${random_dir}/$(printf "%02d" $class)_${number}-join.png"	
+    else
+	join_imgs="${random_dir}/${dig_fn}-join.png"	
+    fi
 
     original_img=${ts_dir}/${dig_fn}-original.png
     decoded_img=${ts_dir}/${dig_fn}.png
 
     memories_imgs=`find ${ms_dir} -name ${dig_fn}.png -print | sort`
     echo $memories_imgs
-    convert ${original_img} ${decoded_img} $(echo $memories_imgs) -border 2 -bordercolor white -append $join_imgs     
+    convert ${original_img} ${decoded_img} $(echo $memories_imgs) -border 1 -bordercolor white -append $join_imgs     
 done
 
 join_imgs=`find ${random_dir} -type f -name '*.png' -print| sort`
