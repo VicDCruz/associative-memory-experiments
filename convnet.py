@@ -102,8 +102,6 @@ def add_noise(data, experiment, occlusion=0, bars_type=None):
     # data is assumed to be a numpy array of shape (N, img_rows, img_columns)
 
     if experiment < constants.EXP_5:
-        print('Todo ok')
-        exit()
         return data
     elif experiment < constants.EXP_9:
         sides = {constants.EXP_5: TOP_SIDE,  constants.EXP_6: BOTTOM_SIDE,
@@ -146,9 +144,6 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
     #         45: 27,
     #         46: 29
     #     }.get(l, l)
-
-    print('desde dataset')
-    exit()
 
     all_data = add_noise(all_data, experiment, occlusion, bars_type)
 
