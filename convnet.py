@@ -102,6 +102,8 @@ def add_noise(data, experiment, occlusion=0, bars_type=None):
     # data is assumed to be a numpy array of shape (N, img_rows, img_columns)
 
     if experiment < constants.EXP_5:
+        print('Todo ok')
+        exit()
         return data
     elif experiment < constants.EXP_9:
         sides = {constants.EXP_5: TOP_SIDE,  constants.EXP_6: BOTTOM_SIDE,
