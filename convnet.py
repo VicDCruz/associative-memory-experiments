@@ -23,6 +23,7 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.callbacks import Callback
 from joblib import Parallel, delayed
 from extra_keras_datasets import emnist
+import emnist
 import png
 
 import constants
@@ -113,8 +114,8 @@ def add_noise(data, experiment, occlusion=0, bars_type=None):
 def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
 
     # Load MNIST data, as part of TensorFlow.
-    (train_images, train_labels), (test_images,
-                                   test_labels) = emnist.load_data(type='balanced')
+    (train_images, train_labels), (test_images, test_labels) = emnist.extract_training_samples(
+        'balanced'), emnist.extract_test_samples('balanced')
 
     all_data = np.concatenate((train_images, test_images), axis=0)
     all_labels = np.concatenate((train_labels, test_labels), axis=0)
