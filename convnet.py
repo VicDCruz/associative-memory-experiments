@@ -22,7 +22,7 @@ from tensorflow.keras.layers import Input, Conv2D, MaxPooling2D, Dropout, Flatte
 from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.callbacks import Callback
 from joblib import Parallel, delayed
-from extra_keras_datasets import emnist
+# from extra_keras_datasets import emnist
 import emnist
 import png
 
