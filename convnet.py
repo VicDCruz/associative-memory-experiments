@@ -118,20 +118,20 @@ def get_data(experiment, occlusion=None, bars_type=None, one_hot=False):
     all_data = np.concatenate((train_images, test_images), axis=0)
     all_labels = np.concatenate((train_labels, test_labels), axis=0)
 
-    # for i,l in enumerate(all_labels):
-    #     all_labels[i] = {
-    #         36:10,
-    #         37:11,
-    #         38:13,
-    #         39:14,
-    #         40:15,
-    #         41:16,
-    #         42:17,
-    #         43:23,
-    #         44:26,
-    #         45:27,
-    #         46:29
-    #     }.get(l,l)
+    for i,l in enumerate(all_labels):
+        all_labels[i] = {
+            36:10,
+            37:11,
+            38:13,
+            39:14,
+            40:15,
+            41:16,
+            42:17,
+            43:23,
+            44:26,
+            45:27,
+            46:29
+        }.get(l,l)
 
     all_data = add_noise(all_data, experiment, occlusion, bars_type)
 
