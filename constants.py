@@ -189,7 +189,7 @@ am_filling_percent = 0.33   # 0.67 + 0.33 = 1.0
 domain = 64
 
 n_jobs = 4
-n_labels = 47 # 35 (exp 2) | 46
+n_labels = 36 # 35 (exp 2) | 46
 labels_per_memory = [0, 1, 2]
 
 all_labels = list(range(n_labels))
